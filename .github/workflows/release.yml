@@ -26,8 +26,13 @@ jobs:
       - name: Sync version dynamically from git tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$GITHUB_REF_NAME' is not a release tag (expected vX.Y.Z). Run this workflow from a tag."
+            exit 1
+          fi
           echo "Setting dynamic release version to: $VERSION"
-          sed -i "9s/<version>.*<\/version>/<version>${VERSION}<\/version>/" pom.xml
+          mvn -B -q versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+          test "$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)" = "$VERSION"
 
       - name: Deploy to OSSRH / Central
         run: mvn clean deploy -P release -DskipTests
