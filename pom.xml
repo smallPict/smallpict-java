@@ -6,7 +6,7 @@
 
     <groupId>app.smallpict</groupId>
     <artifactId>smallpict-java</artifactId>
-    <version>0.0.5</version>
+    <version>0.0.6</version>
     <packaging>jar</packaging>
 
     <name>SmallPict Java SDK</name>
