@@ -30,9 +30,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/tuxnoob/smallpict-java.git</connection>
-        <developerConnection>scm:git:ssh://github.com:tuxnoob/smallpict-java.git</developerConnection>
-        <url>https://github.com/tuxnoob/smallpict-java</url>
+        <connection>scm:git:git://github.com/smallPict/smallpict-java.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/smallPict/smallpict-java.git</developerConnection>
+        <url>https://github.com/smallPict/smallpict-java</url>
     </scm>
 
     <properties>
