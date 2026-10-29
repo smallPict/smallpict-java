@@ -46,6 +46,7 @@ implementation("app.smallpict:smallpict-java:0.0.6")
 
 ```java
 import com.smallpict.SmallPictClient;
+import com.smallpict.models.CompressionMode;
 import com.smallpict.models.ImageFormat;
 import com.smallpict.models.OptimizeOptions;
 import com.smallpict.models.OptimizeResult;
@@ -63,6 +64,7 @@ public class Main {
                 OptimizeOptions.builder()
                         .format(ImageFormat.AVIF)
                         .quality(80)
+                        .mode(CompressionMode.LOSSY) // LOSSY (default), EXTREME or LOSSLESS; replaces the deprecated lossless(true)
                         .maxWidth(1920)
                         .build()
         );
@@ -72,6 +74,8 @@ public class Main {
     }
 }
 ```
+
+The server checks the mode against your plan. A mode the plan does not include fails with `PermissionDeniedException` (`mode_not_in_plan`); `getDetails().get("allowed_modes")` lists the modes you can use. `getJobStatus(jobId)` reports `getModeApplied()` and `getQualityApplied()` (`null` for older jobs).
 
 ### 2. Spring Boot 3 Integration
 

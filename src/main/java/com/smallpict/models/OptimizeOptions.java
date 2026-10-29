@@ -3,6 +3,7 @@ package com.smallpict.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.smallpict.errors.ValidationException;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OptimizeOptions {
@@ -15,6 +16,8 @@ public class OptimizeOptions {
     @JsonProperty("max_dimension")
     private final Integer maxDimension;
     private final FitMode fit;
+    private final CompressionMode mode;
+    @JsonIgnore // deprecated: only `mode` goes on the wire
     private final Boolean lossless;
     @JsonProperty("strip_metadata")
     private final boolean stripMetadata;
@@ -32,6 +35,11 @@ public class OptimizeOptions {
         this.maxDimension = builder.maxDimension;
         this.fit = builder.fit;
         this.lossless = builder.lossless;
+        boolean losslessFlag = Boolean.TRUE.equals(builder.lossless);
+        if (losslessFlag && builder.mode != null && builder.mode != CompressionMode.LOSSLESS) {
+            throw new ValidationException("lossless=true contradicts mode=" + builder.mode + "; set only mode");
+        }
+        this.mode = builder.mode != null ? builder.mode : (losslessFlag ? CompressionMode.LOSSLESS : null);
         this.stripMetadata = builder.stripMetadata;
         this.filename = builder.filename;
         this.mimeType = builder.mimeType;
@@ -66,6 +74,13 @@ public class OptimizeOptions {
         return fit;
     }
 
+    /** Compression mode sent as {@code options.mode}; {@code null} lets the server use its default ({@code lossy}). */
+    public CompressionMode getMode() {
+        return mode;
+    }
+
+    /** @deprecated Use {@link #getMode()}; removal not before the next major version. */
+    @Deprecated
     public Boolean getLossless() {
         return lossless;
     }
@@ -97,6 +112,7 @@ public class OptimizeOptions {
         private Integer maxHeight;
         private Integer maxDimension;
         private FitMode fit = FitMode.COVER;
+        private CompressionMode mode;
         private Boolean lossless = false;
         private boolean stripMetadata = true;
         private String filename;
@@ -133,6 +149,16 @@ public class OptimizeOptions {
             return this;
         }
 
+        public Builder mode(CompressionMode mode) {
+            this.mode = mode;
+            return this;
+        }
+
+        /**
+         * @deprecated Use {@link #mode(CompressionMode)} with {@link CompressionMode#LOSSLESS}; removal not before the next major version.
+         * {@code true} is sent as {@code mode: "lossless"}; {@code true} with another explicit mode makes {@link #build()} throw {@link ValidationException}.
+         */
+        @Deprecated
         public Builder lossless(boolean lossless) {
             this.lossless = lossless;
             return this;

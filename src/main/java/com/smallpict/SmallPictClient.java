@@ -1,5 +1,6 @@
 package com.smallpict;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -337,6 +338,9 @@ public class SmallPictClient {
                     message = errNode.get("message").asText();
                 } else if (errNode.isTextual()) {
                     message = errNode.asText();
+                }
+                if (errNode.isObject() && errNode.path("details").isObject()) {
+                    details = objectMapper.convertValue(errNode.get("details"), new TypeReference<Map<String, Object>>() {});
                 }
             } else if (body.has("message")) {
                 message = body.get("message").asText();

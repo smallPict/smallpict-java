@@ -17,6 +17,15 @@ public class JobStatusResult {
     private final String createdAt;
     @JsonProperty("updated_at")
     private final String updatedAt;
+    @JsonProperty("mode_applied")
+    private final String modeApplied;
+    @JsonProperty("quality_applied")
+    private final Integer qualityApplied;
+
+    public JobStatusResult(String jobId, String status, String url, String format, Long bytesSaved,
+            Map<String, Object> error, String createdAt, String updatedAt) {
+        this(jobId, status, url, format, bytesSaved, error, createdAt, updatedAt, null, null);
+    }
 
     @JsonCreator
     public JobStatusResult(
@@ -27,7 +36,9 @@ public class JobStatusResult {
             @JsonProperty("bytes_saved") Long bytesSaved,
             @JsonProperty("error") Map<String, Object> error,
             @JsonProperty("created_at") String createdAt,
-            @JsonProperty("updated_at") String updatedAt) {
+            @JsonProperty("updated_at") String updatedAt,
+            @JsonProperty("mode_applied") String modeApplied,
+            @JsonProperty("quality_applied") Integer qualityApplied) {
         this.jobId = jobId;
         this.status = status != null ? status : "processing";
         this.url = url;
@@ -36,6 +47,8 @@ public class JobStatusResult {
         this.error = error;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.modeApplied = modeApplied;
+        this.qualityApplied = qualityApplied;
     }
 
     public String getJobId() {
@@ -68,5 +81,15 @@ public class JobStatusResult {
 
     public String getUpdatedAt() {
         return updatedAt;
+    }
+
+    /** Mode the server applied, as sent (a String so new values never break parsing); {@code null} for jobs created before modes existed. */
+    public String getModeApplied() {
+        return modeApplied;
+    }
+
+    /** Quality the encoder got; {@code null} when the server did not report it. */
+    public Integer getQualityApplied() {
+        return qualityApplied;
     }
 }
