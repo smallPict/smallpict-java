@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Folder purge.** `PurgeType.FOLDER` and `purgeCdn(urls, purgeType, folder)` / `purgeCdnAsync(urls, purgeType, folder)`. `folder` is required for `FOLDER` (`ValidationException` before any request) and sent only with it. `URL` and `ALL` purges are unchanged.
 
 ### Changed
+- `OptimizeOptions` no longer defaults `quality` to 80: `options.quality` is sent only when you call `quality(...)`, so the server picks the default per mode (`EXTREME` now gets its per-codec default instead of 80; `LOSSY` still gets 80). `getQuality()` returns `null` when unset (possible breaking change for code that unboxes it to `int`). README has an `EXTREME` example without quality.
 - A `429` with error code `purge_rate_limited` (hourly limit of `FOLDER` / `ALL` purges) now throws `RateLimitException` without automatic retries; the limit resets within the hour, so retrying only delayed the error. Other `429` responses are retried as before.
 - Maven coordinates moved from `io.github.tuxnoob:smallpict-java` to `app.smallpict:smallpict-java`. Update your dependency; the old coordinates receive no new releases.
 
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OptimizeOptions.Builder.lossless(boolean)` and `OptimizeOptions.getLossless()`. Use `mode(CompressionMode.LOSSLESS)`. `lossless(true)` without a mode is sent as `mode: "lossless"`; with a different explicit mode, `build()` throws `ValidationException`. Removal not before the next major version.
 
 ### Fixed
+- `mode(CompressionMode.EXTREME)` without `quality(...)` produced files the size of lossy quality 80, because the SDK always sent `quality: 80`.
 - `lossless(true)` used to be ignored by the server; it is now honoured (sent as `mode: "lossless"`). The `lossless` field is no longer sent on the wire.
 - API error `details` were always dropped (`SmallPictException.getDetails()` returned `null`); they are now kept, so a `403 mode_not_in_plan` `PermissionDeniedException` carries `mode` and `allowed_modes`.
 

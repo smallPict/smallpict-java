@@ -56,6 +56,7 @@ public class OptimizeOptions {
         return format;
     }
 
+    /** Quality sent as {@code options.quality}; {@code null} (unset) lets the server pick the default for the mode and output format. */
     public Integer getQuality() {
         return quality;
     }
@@ -114,7 +115,7 @@ public class OptimizeOptions {
 
     public static class Builder {
         private ImageFormat format = ImageFormat.AUTO;
-        private Integer quality = 80;
+        private Integer quality;
         private Integer maxWidth;
         private Integer maxHeight;
         private Integer maxDimension;
@@ -132,6 +133,7 @@ public class OptimizeOptions {
             return this;
         }
 
+        /** Clamped to 1-100. Leave unset to let the server pick the default per mode; a value you set is kept or raised to the mode's floor. */
         public Builder quality(int quality) {
             this.quality = Math.max(1, Math.min(100, quality));
             return this;

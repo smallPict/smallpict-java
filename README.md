@@ -76,6 +76,18 @@ public class Main {
 }
 ```
 
+`EXTREME` gives the smallest files on every plan. Leave `quality` out so the server uses its default for the output format; a quality you set is kept or raised to the format floor. Mode comparison: https://smallpict.app/en/docs/image-settings
+
+```java
+OptimizeResult smallest = client.optimize(
+        new File("hero-banner.png"),
+        OptimizeOptions.builder()
+                .format(ImageFormat.AVIF)
+                .mode(CompressionMode.EXTREME) // no quality(...): the server picks the AVIF default
+                .build()
+);
+```
+
 The server checks the mode against your plan. A mode the plan does not include fails with `PermissionDeniedException` (`mode_not_in_plan`); `getDetails().get("allowed_modes")` lists the modes you can use. `getJobStatus(jobId)` reports `getModeApplied()` and `getQualityApplied()` (`null` for older jobs).
 
 ### 2. Spring Boot 3 Integration

@@ -60,6 +60,17 @@ class CompressionModeTest {
     }
 
     @Test
+    void qualityOmittedWhenUnset() throws Exception {
+        assertFalse(sentOptions(b -> b.mode(CompressionMode.EXTREME)).has("quality"));
+        assertNull(OptimizeOptions.builder().build().getQuality());
+    }
+
+    @Test
+    void qualitySentWhenSet() throws Exception {
+        assertEquals(55, sentOptions(b -> b.mode(CompressionMode.EXTREME).quality(55)).get("quality").asInt());
+    }
+
+    @Test
     void modeOnly() throws Exception {
         assertEquals("extreme", sentOptions(b -> b.mode(CompressionMode.EXTREME)).get("mode").asText());
     }
