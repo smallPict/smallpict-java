@@ -66,6 +66,7 @@ public class Main {
                         .quality(80)
                         .mode(CompressionMode.LOSSY) // LOSSY (default), EXTREME or LOSSLESS; replaces the deprecated lossless(true)
                         .maxWidth(1920)
+                        .folder("blog/2026") // Optional: 1-3 segments, stored lower-cased; result.getFolder() returns it
                         .build()
         );
 
@@ -127,7 +128,12 @@ System.out.printf("Plan: %s, Quota Used: %.2f%%\n", quota.getPlan(), quota.getQu
 // 2. Invalidate Edge CDN cache
 PurgeResponse purge = client.purgeCdn(List.of("https://cdn.smallpict.app/opt/hero-banner.avif"), PurgeType.URL);
 System.out.println(purge.getMessage());
+
+// 3. Purge every file uploaded to one folder
+client.purgeCdn(null, PurgeType.FOLDER, "blog/2026");
 ```
+
+`FOLDER` and `ALL` purges have an hourly limit per account (10 and 2). Over it, `purgeCdn` throws `RateLimitException` (`429 purge_rate_limited`) at once; the SDK does not retry it, because the limit resets within the hour, not seconds.
 
 ---
 

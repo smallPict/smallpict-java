@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `CompressionMode` enum (`LOSSY`, `EXTREME`, `LOSSLESS`) and `OptimizeOptions.Builder.mode(...)`, sent as `options.mode` on `POST /v1/optimize`. Omitted when unset, so the server default (`lossy`) applies. The server checks the mode against the plan; no client-side check.
 - `JobStatusResult.getModeApplied()` (String) and `getQualityApplied()` (Integer) from the job status; `null` when the server does not report them.
+- **Upload folder.** `OptimizeOptions.Builder.folder(String)`, sent as `options.folder` on `POST /v1/optimize` and omitted when unset. `OptimizeResult.getFolder()` and `JobStatusResult.getFolder()` return the folder as the server stored it (lower case); `null` without one. Empty segments (`a//b`, leading or trailing `/`), `..` segments and more than 3 segments throw `ValidationException` before any request; the server checks the full format and its 400 `invalid_folder` also surfaces as `ValidationException` with the server's message.
+- **Folder purge.** `PurgeType.FOLDER` and `purgeCdn(urls, purgeType, folder)` / `purgeCdnAsync(urls, purgeType, folder)`. `folder` is required for `FOLDER` (`ValidationException` before any request) and sent only with it. `URL` and `ALL` purges are unchanged.
+
+### Changed
+- A `429` with error code `purge_rate_limited` (hourly limit of `FOLDER` / `ALL` purges) now throws `RateLimitException` without automatic retries; the limit resets within the hour, so retrying only delayed the error. Other `429` responses are retried as before.
+- Maven coordinates moved from `io.github.tuxnoob:smallpict-java` to `app.smallpict:smallpict-java`. Update your dependency; the old coordinates receive no new releases.
 
 ### Deprecated
 - `OptimizeOptions.Builder.lossless(boolean)` and `OptimizeOptions.getLossless()`. Use `mode(CompressionMode.LOSSLESS)`. `lossless(true)` without a mode is sent as `mode: "lossless"`; with a different explicit mode, `build()` throws `ValidationException`. Removal not before the next major version.
@@ -17,9 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `lossless(true)` used to be ignored by the server; it is now honoured (sent as `mode: "lossless"`). The `lossless` field is no longer sent on the wire.
 - API error `details` were always dropped (`SmallPictException.getDetails()` returned `null`); they are now kept, so a `403 mode_not_in_plan` `PermissionDeniedException` carries `mode` and `allowed_modes`.
-
-### Changed
-- Maven coordinates moved from `io.github.tuxnoob:smallpict-java` to `app.smallpict:smallpict-java`. Update your dependency; the old coordinates receive no new releases.
 
 ## [1.0.0] - 2026-08-22
 

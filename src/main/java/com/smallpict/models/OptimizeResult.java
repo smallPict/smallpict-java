@@ -20,8 +20,14 @@ public class OptimizeResult {
     private final double savingsPercentage;
     @JsonProperty("upload_url")
     private final String uploadUrl;
+    private final String folder;
     @JsonIgnore
     private final byte[] data;
+
+    public OptimizeResult(String jobId, String status, String url, String format, Long originalSize,
+            Long compressedSize, Long bytesSaved, Double savingsPercentage, String uploadUrl) {
+        this(jobId, status, url, format, originalSize, compressedSize, bytesSaved, savingsPercentage, uploadUrl, (String) null);
+    }
 
     @JsonCreator
     public OptimizeResult(
@@ -33,7 +39,8 @@ public class OptimizeResult {
             @JsonProperty("compressed_size") Long compressedSize,
             @JsonProperty("bytes_saved") Long bytesSaved,
             @JsonProperty("savings_percentage") Double savingsPercentage,
-            @JsonProperty("upload_url") String uploadUrl) {
+            @JsonProperty("upload_url") String uploadUrl,
+            @JsonProperty("folder") String folder) {
         this.jobId = jobId != null ? jobId : "sync";
         this.status = status != null ? status : "completed";
         this.url = url != null ? url : "";
@@ -49,6 +56,7 @@ public class OptimizeResult {
             this.savingsPercentage = 0.0;
         }
         this.uploadUrl = uploadUrl;
+        this.folder = folder;
         this.data = null;
     }
 
@@ -72,6 +80,7 @@ public class OptimizeResult {
         this.bytesSaved = bytesSaved;
         this.savingsPercentage = savingsPercentage;
         this.uploadUrl = uploadUrl;
+        this.folder = null;
         this.data = data;
     }
 
@@ -109,6 +118,11 @@ public class OptimizeResult {
 
     public String getUploadUrl() {
         return uploadUrl;
+    }
+
+    /** Folder stored with the job, normalized (lower case); {@code null} without one. */
+    public String getFolder() {
+        return folder;
     }
 
     public byte[] getData() {

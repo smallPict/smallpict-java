@@ -24,6 +24,7 @@ public class OptimizeOptions {
     private final String filename;
     @JsonProperty("mime_type")
     private final String mimeType;
+    private final String folder;
     @JsonIgnore
     private final String idempotencyKey;
 
@@ -43,6 +44,7 @@ public class OptimizeOptions {
         this.stripMetadata = builder.stripMetadata;
         this.filename = builder.filename;
         this.mimeType = builder.mimeType;
+        this.folder = builder.folder;
         this.idempotencyKey = builder.idempotencyKey;
     }
 
@@ -101,6 +103,11 @@ public class OptimizeOptions {
         return mimeType;
     }
 
+    /** Upload folder sent as {@code options.folder}; {@code null} stores the file as before. */
+    public String getFolder() {
+        return folder;
+    }
+
     public String getIdempotencyKey() {
         return idempotencyKey;
     }
@@ -117,6 +124,7 @@ public class OptimizeOptions {
         private boolean stripMetadata = true;
         private String filename;
         private String mimeType;
+        private String folder;
         private String idempotencyKey;
 
         public Builder format(ImageFormat format) {
@@ -181,6 +189,15 @@ public class OptimizeOptions {
 
         public Builder contentType(String contentType) {
             this.mimeType = contentType;
+            return this;
+        }
+
+        /**
+         * Folder for the stored file, 1-3 segments separated by {@code /} (e.g. {@code "blog/2026"}).
+         * The server lower-cases it and rejects a malformed value with 400 {@code invalid_folder} ({@link ValidationException}).
+         */
+        public Builder folder(String folder) {
+            this.folder = folder;
             return this;
         }
 

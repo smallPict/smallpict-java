@@ -21,10 +21,16 @@ public class JobStatusResult {
     private final String modeApplied;
     @JsonProperty("quality_applied")
     private final Integer qualityApplied;
+    private final String folder;
 
     public JobStatusResult(String jobId, String status, String url, String format, Long bytesSaved,
             Map<String, Object> error, String createdAt, String updatedAt) {
         this(jobId, status, url, format, bytesSaved, error, createdAt, updatedAt, null, null);
+    }
+
+    public JobStatusResult(String jobId, String status, String url, String format, Long bytesSaved,
+            Map<String, Object> error, String createdAt, String updatedAt, String modeApplied, Integer qualityApplied) {
+        this(jobId, status, url, format, bytesSaved, error, createdAt, updatedAt, modeApplied, qualityApplied, null);
     }
 
     @JsonCreator
@@ -38,7 +44,8 @@ public class JobStatusResult {
             @JsonProperty("created_at") String createdAt,
             @JsonProperty("updated_at") String updatedAt,
             @JsonProperty("mode_applied") String modeApplied,
-            @JsonProperty("quality_applied") Integer qualityApplied) {
+            @JsonProperty("quality_applied") Integer qualityApplied,
+            @JsonProperty("folder") String folder) {
         this.jobId = jobId;
         this.status = status != null ? status : "processing";
         this.url = url;
@@ -49,6 +56,7 @@ public class JobStatusResult {
         this.updatedAt = updatedAt;
         this.modeApplied = modeApplied;
         this.qualityApplied = qualityApplied;
+        this.folder = folder;
     }
 
     public String getJobId() {
@@ -91,5 +99,10 @@ public class JobStatusResult {
     /** Quality the encoder got; {@code null} when the server did not report it. */
     public Integer getQualityApplied() {
         return qualityApplied;
+    }
+
+    /** Folder stored with the job, normalized (lower case); {@code null} for jobs without one. */
+    public String getFolder() {
+        return folder;
     }
 }

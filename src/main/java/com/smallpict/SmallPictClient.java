@@ -107,6 +107,11 @@ public class SmallPictClient {
         return purgeCdnAsync(urls, purgeType).join();
     }
 
+    /** Purge with a folder; {@code folder} is required for {@link PurgeType#FOLDER} and sent only with it. */
+    public PurgeResponse purgeCdn(List<String> urls, PurgeType purgeType, String folder) {
+        return purgeCdnAsync(urls, purgeType, folder).join();
+    }
+
     public boolean validateKey() {
         return validateKeyAsync().join();
     }
@@ -119,6 +124,9 @@ public class SmallPictClient {
 
     public CompletableFuture<OptimizeResult> optimizeAsync(byte[] data, OptimizeOptions options) {
         OptimizeOptions opts = options != null ? options : OptimizeOptions.builder().build();
+        if (opts.getFolder() != null) {
+            validateFolder(opts.getFolder());
+        }
         String filename = opts.getFilename() != null ? opts.getFilename() : "image.jpg";
         String mimeType = opts.getMimeType() != null ? opts.getMimeType() : "image/jpeg";
 
@@ -173,9 +181,21 @@ public class SmallPictClient {
     }
 
     public CompletableFuture<PurgeResponse> purgeCdnAsync(List<String> urls, PurgeType purgeType) {
+        return purgeCdnAsync(urls, purgeType, null);
+    }
+
+    /** Purge with a folder; {@code folder} is required for {@link PurgeType#FOLDER} and sent only with it. */
+    public CompletableFuture<PurgeResponse> purgeCdnAsync(List<String> urls, PurgeType purgeType, String folder) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("purge_type", purgeType != null ? purgeType.getValue() : "url");
         payload.put("urls", urls != null ? urls : Collections.emptyList());
+        if (purgeType == PurgeType.FOLDER) {
+            if (folder == null || folder.trim().isEmpty()) {
+                throw new ValidationException("folder is required for purge type \"folder\"");
+            }
+            validateFolder(folder);
+            payload.put("folder", folder);
+        }
 
         return executeRequestAsync("POST", "/v1/purge", payload, null)
                 .thenApply(json -> {
@@ -209,6 +229,19 @@ public class SmallPictClient {
                         throw new SmallPictException("Failed to parse JobStatusResult: " + e.getMessage());
                     }
                 });
+    }
+
+    // shortcut: catches the obvious mistakes only; the server's 400 invalid_folder is the authority on the full format.
+    private static void validateFolder(String folder) {
+        String[] segments = folder.split("/", -1);
+        if (segments.length > 3) {
+            throw new ValidationException("folder has more than 3 segments: " + folder);
+        }
+        for (String segment : segments) {
+            if (segment.isEmpty() || segment.equals("..")) {
+                throw new ValidationException("folder has an empty or \"..\" segment: " + folder);
+            }
+        }
     }
 
     // --- Internal HTTP Pipeline ---
@@ -287,7 +320,18 @@ public class SmallPictClient {
                                 catch (NumberFormatException e) { return java.util.Optional.empty(); }
                             }).orElse(null);
 
-                    if ((statusCode == 429 || (statusCode >= 500 && statusCode <= 504)) && attempt <= config.getMaxRetries()) {
+                    JsonNode jsonNode = null;
+                    if (response.body() != null && response.body().length > 0) {
+                        try {
+                            jsonNode = objectMapper.readTree(response.body());
+                        } catch (Exception ignored) {}
+                    }
+                    // The hourly purge limit does not reset in seconds, so retrying it only burns attempts.
+                    boolean purgeRateLimited = statusCode == 429 && jsonNode != null
+                            && "purge_rate_limited".equals(jsonNode.path("error").path("code").asText());
+
+                    if ((statusCode == 429 || (statusCode >= 500 && statusCode <= 504)) && !purgeRateLimited
+                            && attempt <= config.getMaxRetries()) {
                         final long delayMs = (retryAfter != null && retryAfter > 0)
                                 ? retryAfter * 1000L
                                 : 250L * (1L << (attempt - 1));
@@ -300,13 +344,6 @@ public class SmallPictClient {
                                 Thread.currentThread().interrupt();
                             }
                         }).thenCompose(v -> executeWithRetryAsync(method, endpointUrl, path, bodyBytes, bodyHash, idempotencyKey, attempt + 1));
-                    }
-
-                    JsonNode jsonNode = null;
-                    if (response.body() != null && response.body().length > 0) {
-                        try {
-                            jsonNode = objectMapper.readTree(response.body());
-                        } catch (Exception ignored) {}
                     }
 
                     if (statusCode < 200 || statusCode >= 300) {
