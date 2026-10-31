@@ -76,6 +76,11 @@ class CompressionModeTest {
     }
 
     @Test
+    void modeAuto() throws Exception {
+        assertEquals("auto", sentOptions(b -> b.mode(CompressionMode.AUTO)).get("mode").asText());
+    }
+
+    @Test
     void deprecatedFlagOnly() throws Exception {
         assertEquals("lossless", sentOptions(b -> b.lossless(true)).get("mode").asText());
     }

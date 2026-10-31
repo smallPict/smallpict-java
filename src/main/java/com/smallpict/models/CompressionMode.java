@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum CompressionMode {
     LOSSY("lossy"),
     EXTREME("extreme"),
-    LOSSLESS("lossless");
+    LOSSLESS("lossless"),
+    /** The server picks the quality per image from a visual score (CMP-07). */
+    AUTO("auto");
 
     private final String value;
 

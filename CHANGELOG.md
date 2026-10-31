@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `CompressionMode.AUTO` (`"auto"`): the server picks the lowest quality per image that keeps the visual score (SSIMULACRA 2) at or above 70, and ignores `quality` (CMP-07). Plans: WP Pro and Business, Velocity, Momentum and sandbox (5 auto jobs per minute per sandbox key); where it cannot search (PNG or GIF output, animation, time limit) the job is lossy and `modeApplied` says so. A server without auto enabled answers `400 invalid_mode`.
 - `CompressionMode` enum (`LOSSY`, `EXTREME`, `LOSSLESS`) and `OptimizeOptions.Builder.mode(...)`, sent as `options.mode` on `POST /v1/optimize`. Omitted when unset, so the server default (`lossy`) applies. The server checks the mode against the plan; no client-side check.
 - `JobStatusResult.getModeApplied()` (String) and `getQualityApplied()` (Integer) from the job status; `null` when the server does not report them.
 - **Upload folder.** `OptimizeOptions.Builder.folder(String)`, sent as `options.folder` on `POST /v1/optimize` and omitted when unset. `OptimizeResult.getFolder()` and `JobStatusResult.getFolder()` return the folder as the server stored it (lower case); `null` without one. Empty segments (`a//b`, leading or trailing `/`), `..` segments and more than 3 segments throw `ValidationException` before any request; the server checks the full format and its 400 `invalid_folder` also surfaces as `ValidationException` with the server's message.

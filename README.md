@@ -64,7 +64,7 @@ public class Main {
                 OptimizeOptions.builder()
                         .format(ImageFormat.AVIF)
                         .quality(80)
-                        .mode(CompressionMode.LOSSY) // LOSSY (default), EXTREME or LOSSLESS; replaces the deprecated lossless(true)
+                        .mode(CompressionMode.LOSSY) // LOSSY (default), EXTREME, LOSSLESS or AUTO; replaces the deprecated lossless(true)
                         .maxWidth(1920)
                         .folder("blog/2026") // Optional: 1-3 segments, stored lower-cased; result.getFolder() returns it
                         .build()
