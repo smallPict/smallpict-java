@@ -28,14 +28,14 @@ Official Java SDK for the [SmallPict Image Optimization API](https://smallpict.a
 <dependency>
     <groupId>app.smallpict</groupId>
     <artifactId>smallpict-java</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```kotlin
-implementation("app.smallpict:smallpict-java:0.0.6")
+implementation("app.smallpict:smallpict-java:0.0.7")
 ```
 
 ---

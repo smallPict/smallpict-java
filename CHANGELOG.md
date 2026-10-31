@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-10-31
+
 ### Added
 - `CompressionMode.AUTO` (`"auto"`): the server picks the lowest quality per image that keeps the visual score (SSIMULACRA 2) at or above 70, and ignores `quality` (CMP-07). Plans: WP Pro and Business, Velocity, Momentum and sandbox (5 auto jobs per minute per sandbox key); where it cannot search (PNG or GIF output, animation, time limit) the job is lossy and `modeApplied` says so. A server without auto enabled answers `400 invalid_mode`.
 - `CompressionMode` enum (`LOSSY`, `EXTREME`, `LOSSLESS`) and `OptimizeOptions.Builder.mode(...)`, sent as `options.mode` on `POST /v1/optimize`. Omitted when unset, so the server default (`lossy`) applies. The server checks the mode against the plan; no client-side check.
