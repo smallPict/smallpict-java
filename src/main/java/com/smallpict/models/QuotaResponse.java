@@ -19,6 +19,20 @@ public class QuotaResponse {
     private final Integer activeKeysCount;
     @JsonProperty("active_sites_count")
     private final Integer activeSitesCount;
+    private final Capacity capacity;
+
+    public QuotaResponse(
+            String plan,
+            Long bytesUsed,
+            Long quotaLimit,
+            Double quotaPercentage,
+            Long cdnEgressUsedBytes,
+            Long cdnEgressQuotaBytes,
+            Integer activeKeysCount,
+            Integer activeSitesCount) {
+        this(plan, bytesUsed, quotaLimit, quotaPercentage, cdnEgressUsedBytes, cdnEgressQuotaBytes,
+                activeKeysCount, activeSitesCount, null);
+    }
 
     @JsonCreator
     public QuotaResponse(
@@ -29,7 +43,8 @@ public class QuotaResponse {
             @JsonProperty("cdn_egress_used_bytes") Long cdnEgressUsedBytes,
             @JsonProperty("cdn_egress_quota_bytes") Long cdnEgressQuotaBytes,
             @JsonProperty("active_keys_count") Integer activeKeysCount,
-            @JsonProperty("active_sites_count") Integer activeSitesCount) {
+            @JsonProperty("active_sites_count") Integer activeSitesCount,
+            @JsonProperty("capacity") Capacity capacity) {
         this.plan = plan != null ? plan : "free";
         this.bytesUsed = bytesUsed != null ? bytesUsed : 0L;
         this.quotaLimit = quotaLimit != null ? quotaLimit : 0L;
@@ -44,6 +59,7 @@ public class QuotaResponse {
         this.cdnEgressQuotaBytes = cdnEgressQuotaBytes;
         this.activeKeysCount = activeKeysCount;
         this.activeSitesCount = activeSitesCount;
+        this.capacity = capacity;
     }
 
     public String getPlan() {
@@ -76,5 +92,10 @@ public class QuotaResponse {
 
     public Integer getActiveSitesCount() {
         return activeSitesCount;
+    }
+
+    /** Read-only capacity of the key's product; {@code null} when the server could not read it or is older. */
+    public Capacity getCapacity() {
+        return capacity;
     }
 }

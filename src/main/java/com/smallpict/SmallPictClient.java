@@ -367,10 +367,14 @@ public class SmallPictClient {
     private void handleError(int status, JsonNode body, String requestId, Long retryAfter) {
         String message = "API request failed with HTTP " + status;
         Map<String, Object> details = null;
+        String code = "INTERNAL_ERROR";
 
         if (body != null) {
             if (body.has("error")) {
                 JsonNode errNode = body.get("error");
+                if (errNode.isObject() && errNode.path("code").isTextual()) {
+                    code = errNode.get("code").asText();
+                }
                 if (errNode.isObject() && errNode.has("message")) {
                     message = errNode.get("message").asText();
                 } else if (errNode.isTextual()) {
@@ -395,7 +399,7 @@ public class SmallPictClient {
                 if (status >= 500) {
                     throw new ServerException(message, status, requestId, details);
                 }
-                throw new SmallPictException(message, "INTERNAL_ERROR", status, requestId, details, null);
+                throw new SmallPictException(message, code, status, requestId, details, null);
         }
     }
 

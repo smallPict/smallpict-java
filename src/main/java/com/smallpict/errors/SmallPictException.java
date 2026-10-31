@@ -13,6 +13,7 @@ public class SmallPictException extends RuntimeException {
     private final Integer statusCode;
     private final String requestId;
     private final Map<String, Object> details;
+    private final String upgradeUrl;
 
     public SmallPictException(String message) {
         this(message, "INTERNAL_ERROR", null, null, null, null);
@@ -30,6 +31,8 @@ public class SmallPictException extends RuntimeException {
         this.statusCode = statusCode;
         this.requestId = requestId;
         this.details = details;
+        Object url = details != null ? details.get("upgrade_url") : null;
+        this.upgradeUrl = url instanceof String ? (String) url : null;
     }
 
     public static String sanitize(String msg) {
@@ -67,6 +70,14 @@ public class SmallPictException extends RuntimeException {
 
     public Map<String, Object> getDetails() {
         return details;
+    }
+
+    /**
+     * Dashboard page where the missing capacity is added ({@code details.upgrade_url}), or {@code null}.
+     * Show it to the user; the SDK never opens or fetches it.
+     */
+    public String getUpgradeUrl() {
+        return upgradeUrl;
     }
 
     @Override

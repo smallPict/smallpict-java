@@ -147,6 +147,25 @@ client.purgeCdn(null, PurgeType.FOLDER, "blog/2026");
 
 `FOLDER` and `ALL` purges have an hourly limit per account (10 and 2). Over it, `purgeCdn` throws `RateLimitException` (`429 purge_rate_limited`) at once; the SDK does not retry it, because the limit resets within the hour, not seconds.
 
+### Capacity and upgrade links
+
+`getQuota().getCapacity()` returns storage, CDN, booster balances, the unpaid-account state (`getLapse()`), `getPeriodEnd()` and `getManageUrl()` for the product of your API key. A member that does not apply to your plan is `null`; `getCapacity()` itself is `null` when the server could not read it or is older. Capacity is read-only here: storage add-ons and boosters are bought in the dashboard.
+
+```java
+Capacity capacity = client.getQuota().getCapacity();
+if (capacity != null && capacity.getStorage() != null) {
+    System.out.printf("Storage: %d / %d bytes%n", capacity.getStorage().getUsedBytes(), capacity.getStorage().getLimitBytes());
+}
+
+try {
+    client.optimize(imageBytes, OptimizeOptions.builder().build());
+} catch (QuotaExceededException e) {
+    System.err.println(e.getMessage() + " Add capacity: " + e.getUpgradeUrl()); // null when the error has none
+}
+```
+
+Every `SmallPictException` has `getUpgradeUrl()` (`null` when absent). `storage_quota_exceeded` and `account_read_only` throw `QuotaExceededException`; `mode_not_in_plan` throws `PermissionDeniedException` with `getAllowedModes()`. The SDK never opens these links; show them to your user.
+
 ---
 
 ## 🔒 Security & Schema Compatibility (2026)
