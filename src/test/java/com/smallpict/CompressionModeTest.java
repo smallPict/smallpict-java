@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Mapping cases of smallpict-sdk-shared/compression-modes.json, plus job status and error parsing. */
 @SuppressWarnings("deprecation")
 class CompressionModeTest {
-    private static final String OK_BODY = "{\"job_id\":\"job_1\",\"status\":\"processing\"}";
     private final ObjectMapper mapper = new ObjectMapper();
     private MockWebServer server;
     private SmallPictClient client;
@@ -36,6 +35,7 @@ class CompressionModeTest {
                 .apiKey("sp_sdk_test")
                 .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
+                .pollInterval(java.time.Duration.ofMillis(1))
                 .build();
     }
 
@@ -45,7 +45,11 @@ class CompressionModeTest {
     }
 
     private JsonNode sentOptions(Consumer<OptimizeOptions.Builder> input) throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(OK_BODY));
+        server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json")
+                .setBody("{\"job_id\":\"job_1\",\"status\":\"queued\",\"upload_url\":\"" + server.url("/upload") + "\"}"));
+        server.enqueue(new MockResponse().setResponseCode(200));
+        server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json")
+                .setBody("{\"job_id\":\"job_1\",\"status\":\"completed\"}"));
         OptimizeOptions.Builder b = OptimizeOptions.builder();
         input.accept(b);
         client.optimize("img".getBytes(), b.build());

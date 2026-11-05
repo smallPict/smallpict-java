@@ -11,6 +11,8 @@ public class SmallPictConfig {
     private final Duration timeout;
     private final int maxRetries;
     private final FallbackMode fallbackMode;
+    private final Duration pollInterval;
+    private final Duration waitTimeout;
 
     private SmallPictConfig(Builder builder) {
         String resolvedKey = builder.apiKey != null ? builder.apiKey : System.getenv("SMALLPICT_API_KEY");
@@ -25,6 +27,8 @@ public class SmallPictConfig {
         this.timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(30);
         this.maxRetries = builder.maxRetries;
         this.fallbackMode = builder.fallbackMode != null ? builder.fallbackMode : FallbackMode.THROW;
+        this.pollInterval = builder.pollInterval != null ? builder.pollInterval : Duration.ofSeconds(1);
+        this.waitTimeout = builder.waitTimeout != null ? builder.waitTimeout : Duration.ofSeconds(120);
     }
 
     public static Builder builder() {
@@ -55,6 +59,16 @@ public class SmallPictConfig {
         return fallbackMode;
     }
 
+    /** How often optimize() polls the job status after the upload (default 1 s). */
+    public Duration getPollInterval() {
+        return pollInterval;
+    }
+
+    /** How long optimize() waits for the job before throwing TimeoutException (default 120 s). */
+    public Duration getWaitTimeout() {
+        return waitTimeout;
+    }
+
     public static class Builder {
         private String apiKey;
         private String secretKey;
@@ -62,6 +76,8 @@ public class SmallPictConfig {
         private Duration timeout = Duration.ofSeconds(30);
         private int maxRetries = 3;
         private FallbackMode fallbackMode = FallbackMode.THROW;
+        private Duration pollInterval = Duration.ofSeconds(1);
+        private Duration waitTimeout = Duration.ofSeconds(120);
 
         public Builder apiKey(String apiKey) {
             this.apiKey = apiKey;
@@ -90,6 +106,16 @@ public class SmallPictConfig {
 
         public Builder fallbackMode(FallbackMode fallbackMode) {
             this.fallbackMode = fallbackMode;
+            return this;
+        }
+
+        public Builder pollInterval(Duration pollInterval) {
+            this.pollInterval = pollInterval;
+            return this;
+        }
+
+        public Builder waitTimeout(Duration waitTimeout) {
+            this.waitTimeout = waitTimeout;
             return this;
         }
 

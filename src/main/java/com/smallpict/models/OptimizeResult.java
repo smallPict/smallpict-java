@@ -18,16 +18,13 @@ public class OptimizeResult {
     private final long bytesSaved;
     @JsonProperty("savings_percentage")
     private final double savingsPercentage;
-    @JsonProperty("upload_url")
-    private final String uploadUrl;
+    @JsonProperty("mode_applied")
+    private final String modeApplied;
+    @JsonProperty("quality_applied")
+    private final Integer qualityApplied;
     private final String folder;
     @JsonIgnore
     private final byte[] data;
-
-    public OptimizeResult(String jobId, String status, String url, String format, Long originalSize,
-            Long compressedSize, Long bytesSaved, Double savingsPercentage, String uploadUrl) {
-        this(jobId, status, url, format, originalSize, compressedSize, bytesSaved, savingsPercentage, uploadUrl, (String) null);
-    }
 
     @JsonCreator
     public OptimizeResult(
@@ -39,7 +36,8 @@ public class OptimizeResult {
             @JsonProperty("compressed_size") Long compressedSize,
             @JsonProperty("bytes_saved") Long bytesSaved,
             @JsonProperty("savings_percentage") Double savingsPercentage,
-            @JsonProperty("upload_url") String uploadUrl,
+            @JsonProperty("mode_applied") String modeApplied,
+            @JsonProperty("quality_applied") Integer qualityApplied,
             @JsonProperty("folder") String folder) {
         this.jobId = jobId != null ? jobId : "sync";
         this.status = status != null ? status : "completed";
@@ -55,7 +53,8 @@ public class OptimizeResult {
         } else {
             this.savingsPercentage = 0.0;
         }
-        this.uploadUrl = uploadUrl;
+        this.modeApplied = modeApplied;
+        this.qualityApplied = qualityApplied;
         this.folder = folder;
         this.data = null;
     }
@@ -69,7 +68,6 @@ public class OptimizeResult {
             long compressedSize,
             long bytesSaved,
             double savingsPercentage,
-            String uploadUrl,
             byte[] data) {
         this.jobId = jobId;
         this.status = status;
@@ -79,7 +77,8 @@ public class OptimizeResult {
         this.compressedSize = compressedSize;
         this.bytesSaved = bytesSaved;
         this.savingsPercentage = savingsPercentage;
-        this.uploadUrl = uploadUrl;
+        this.modeApplied = null;
+        this.qualityApplied = null;
         this.folder = null;
         this.data = data;
     }
@@ -116,8 +115,14 @@ public class OptimizeResult {
         return savingsPercentage;
     }
 
-    public String getUploadUrl() {
-        return uploadUrl;
+    /** Mode the server applied, as the job status reported it; {@code null} when it did not. */
+    public String getModeApplied() {
+        return modeApplied;
+    }
+
+    /** Quality the encoder got, as the job status reported it; {@code null} when it did not. */
+    public Integer getQualityApplied() {
+        return qualityApplied;
     }
 
     /** Folder stored with the job, normalized (lower case); {@code null} without one. */

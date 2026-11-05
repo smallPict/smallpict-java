@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** FLD-03: upload folder on optimize, folder purges, purge_rate_limited not retried. */
 class FolderTest {
-    private static final String OK_BODY = "{\"job_id\":\"job_1\",\"status\":\"processing\",\"folder\":\"blog/2026\"}";
     private final ObjectMapper mapper = new ObjectMapper();
     private MockWebServer server;
     private SmallPictClient client;
@@ -36,6 +35,7 @@ class FolderTest {
                 .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
                 .maxRetries(3)
+                .pollInterval(java.time.Duration.ofMillis(1))
                 .build();
     }
 
@@ -48,6 +48,13 @@ class FolderTest {
         server.enqueue(new MockResponse().setResponseCode(status).setHeader("Content-Type", "application/json").setBody(body));
     }
 
+    /** Queued response, accepted PUT, then the given job status. */
+    private void enqueueJob(String completedStatus) {
+        enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"queued\",\"upload_url\":\"" + server.url("/upload") + "\"}");
+        server.enqueue(new MockResponse().setResponseCode(200));
+        enqueueJson(200, completedStatus);
+    }
+
     private JsonNode sentBody() throws Exception {
         return mapper.readTree(server.takeRequest().getBody().readUtf8());
     }
@@ -58,7 +65,7 @@ class FolderTest {
 
     @Test
     void optimizeSendsFolderAndSurfacesIt() throws Exception {
-        enqueueJson(200, OK_BODY);
+        enqueueJob("{\"job_id\":\"job_1\",\"status\":\"completed\",\"folder\":\"blog/2026\"}");
         OptimizeResult r = client.optimize("img".getBytes(), OptimizeOptions.builder().folder("Blog/2026").build());
         assertEquals("Blog/2026", sentBody().get("options").get("folder").asText());
         assertEquals("blog/2026", r.getFolder());
@@ -66,7 +73,7 @@ class FolderTest {
 
     @Test
     void optimizeOmitsFolderWhenUnset() throws Exception {
-        enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"processing\"}");
+        enqueueJob("{\"job_id\":\"job_1\",\"status\":\"completed\"}");
         OptimizeResult r = client.optimize("img".getBytes(), OptimizeOptions.builder().build());
         assertFalse(sentBody().get("options").has("folder"));
         assertNull(r.getFolder());

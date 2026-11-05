@@ -28,14 +28,14 @@ Official Java SDK for the [SmallPict Image Optimization API](https://smallpict.a
 <dependency>
     <groupId>app.smallpict</groupId>
     <artifactId>smallpict-java</artifactId>
-    <version>0.0.7</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```kotlin
-implementation("app.smallpict:smallpict-java:0.0.7")
+implementation("app.smallpict:smallpict-java:0.1.0")
 ```
 
 ---
@@ -70,11 +70,19 @@ public class Main {
                         .build()
         );
 
-        System.out.println("Optimized CDN URL: " + result.getUrl());
+        System.out.println("Optimized URL: " + result.getUrl());
         System.out.println("Saved: " + result.getSavingsPercentage() + "% (" + result.getBytesSaved() + " bytes)");
     }
 }
 ```
+
+### What `optimize()` does
+
+The API is asynchronous: `POST /v1/optimize` queues a job and returns a pre-signed upload URL. `optimize()` runs the whole flow for you: it uploads the bytes to that URL (within the 30 seconds the worker waits for them), polls `GET /v1/optimize/status` every second, and returns once the job is `completed` with `getUrl()`, `getFormat()`, `getBytesSaved()`, `getModeApplied()`, `getQualityApplied()` and `getFolder()` from the job status. `getUrl()` for managed storage is a pre-signed link valid 10 minutes; `getJobStatus(result.getJobId())` returns a fresh one. `optimizeAsync(...)` does the same without blocking the calling thread.
+
+- A failed job throws `SmallPictException` whose `getErrorCode()` is `job_failed` and whose message is the server's (for example `client upload never arrived`); `getDetails().get("job_id")` names the job. A storage that refuses the upload throws `SmallPictException` with code `upload_failed` and the HTTP status.
+- A job still running after `waitTimeout` (default 120 s) throws `TimeoutException` naming the job id; the job keeps running, so you can call `getJobStatus()` later. `pollInterval` (default 1 s) sets the polling interval. Both are builder options: `SmallPictClient.builder().pollInterval(Duration.ofMillis(500)).waitTimeout(Duration.ofMinutes(5))`.
+- Pass the image itself (`byte[]`, `File`, `Path` or `InputStream`). The API does not fetch URLs: download a remote image first and pass its bytes.
 
 `EXTREME` gives the smallest files on every plan. Leave `quality` out so the server uses its default for the output format; a quality you set is kept or raised to the format floor. Mode comparison: https://smallpict.app/en/docs/image-settings
 

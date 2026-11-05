@@ -35,27 +35,22 @@ class SmallPictClientTest {
 
     @Test
     void testOptimizeSuccess() throws InterruptedException {
-        String json = """
-        {
-            "job_id": "job_java_123",
-            "status": "completed",
-            "url": "https://cdn.smallpict.app/opt/hero.avif",
-            "format": "avif",
-            "original_size": 100000,
-            "compressed_size": 15000,
-            "bytes_saved": 85000,
-            "savings_percentage": 85.0
-        }
-        """;
         server.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
-                .setBody(json));
+                .setBody("{\"job_id\":\"job_java_123\",\"status\":\"queued\",\"upload_url\":\"" + server.url("/upload") + "\"}"));
+        server.enqueue(new MockResponse().setResponseCode(200));
+        server.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"job_id\":\"job_java_123\",\"status\":\"completed\","
+                        + "\"url\":\"https://cdn.smallpict.app/opt/hero.avif\",\"format\":\"avif\",\"bytes_saved\":17}"));
 
         SmallPictClient client = SmallPictClient.builder()
                 .apiKey("sp_sdk_test_1234567890")
                 .secretKey("sec_test_secret_123")
                 .baseUrl(server.url("/").toString())
+                .pollInterval(java.time.Duration.ofMillis(1))
                 .build();
 
         OptimizeResult result = client.optimize(
@@ -74,7 +69,7 @@ class SmallPictClientTest {
         assertEquals("job_java_123", result.getJobId());
         assertEquals("completed", result.getStatus());
         assertEquals("https://cdn.smallpict.app/opt/hero.avif", result.getUrl());
-        assertEquals(85.0, result.getSavingsPercentage());
+        assertEquals(85.0, result.getSavingsPercentage()); // 17 of 20 bytes
     }
 
     @Test

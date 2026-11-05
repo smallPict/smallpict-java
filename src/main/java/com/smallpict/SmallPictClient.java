@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class SmallPictClient {
     private final SmallPictConfig config;
@@ -72,13 +73,14 @@ public class SmallPictClient {
     }
 
     public OptimizeResult optimize(File file, OptimizeOptions options) {
+        byte[] bytes;
         try {
-            byte[] bytes = Files.readAllBytes(file.toPath());
-            OptimizeOptions opts = options != null ? options : OptimizeOptions.builder().filename(file.getName()).build();
-            return optimize(bytes, opts);
+            bytes = Files.readAllBytes(file.toPath());
         } catch (Exception e) {
             throw new ValidationException("Failed to read file: " + e.getMessage());
         }
+        OptimizeOptions opts = options != null ? options : OptimizeOptions.builder().filename(file.getName()).build();
+        return optimize(bytes, opts);
     }
 
     public OptimizeResult optimize(Path path, OptimizeOptions options) {
@@ -86,17 +88,17 @@ public class SmallPictClient {
     }
 
     public OptimizeResult optimize(InputStream stream, OptimizeOptions options) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             byte[] chunk = new byte[8192];
             int read;
             while ((read = stream.read(chunk, 0, chunk.length)) != -1) {
                 buffer.write(chunk, 0, read);
             }
-            return optimize(buffer.toByteArray(), options);
         } catch (Exception e) {
             throw new NetworkException("Failed to read image stream: " + e.getMessage(), e);
         }
+        return optimize(buffer.toByteArray(), options);
     }
 
     public QuotaResponse getQuota() {
@@ -138,18 +140,18 @@ public class SmallPictClient {
         payload.put("options", opts);
 
         return executeRequestAsync("POST", "/v1/optimize", payload, opts.getIdempotencyKey())
-                .thenApply(json -> {
-                    try {
-                        return objectMapper.treeToValue(json, OptimizeResult.class);
-                    } catch (Exception e) {
-                        throw new SmallPictException("Failed to parse OptimizeResult: " + e.getMessage());
+                .handle((queued, throwable) -> {
+                    if (throwable == null) {
+                        String jobId = queued.path("job_id").asText();
+                        long deadline = System.nanoTime() + config.getWaitTimeout().toNanos();
+                        // The worker waits 30 s from the request for the object: upload now, poll after.
+                        return uploadAsync(queued.path("upload_url").asText(null), data, mimeType)
+                                .thenCompose(v -> waitForJobAsync(jobId, data.length, deadline));
                     }
-                })
-                .exceptionally(throwable -> {
                     Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
                     if (cause instanceof QuotaExceededException && config.getFallbackMode() == FallbackMode.PASSTHROUGH) {
                         String formatStr = mimeType.replace("image/", "");
-                        return new OptimizeResult(
+                        return CompletableFuture.completedFuture(new OptimizeResult(
                                 "fallback-passthrough",
                                 "completed",
                                 "",
@@ -158,14 +160,66 @@ public class SmallPictClient {
                                 data.length,
                                 0L,
                                 0.0,
-                                null,
                                 data
-                        );
+                        ));
                     }
-                    if (cause instanceof SmallPictException) {
-                        throw (SmallPictException) cause;
+                    return CompletableFuture.<OptimizeResult>failedFuture(cause instanceof SmallPictException
+                            ? cause : new SmallPictException(cause.getMessage()));
+                })
+                .thenCompose(f -> f);
+    }
+
+    /** Plain PUT to the pre-signed URL: only Content-Type and Content-Length, which S3 checks against the signature. No retry. */
+    private CompletableFuture<Void> uploadAsync(String uploadUrl, byte[] data, String mimeType) {
+        if (uploadUrl == null || uploadUrl.isEmpty()) {
+            return CompletableFuture.failedFuture(new SmallPictException("The optimize response has no upload_url."));
+        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uploadUrl))
+                .timeout(config.getTimeout())
+                .header("Content-Type", mimeType)
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(data)) // sets Content-Length = data.length
+                .build();
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .handle((response, throwable) -> {
+                    if (throwable != null) {
+                        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                        throw new NetworkException("Upload to storage failed: " + cause.getMessage(), cause);
                     }
-                    throw new SmallPictException(cause.getMessage());
+                    int status = response.statusCode();
+                    if (status < 200 || status >= 300) {
+                        throw new SmallPictException("Upload to storage failed with HTTP " + status + ": " + response.body(),
+                                "upload_failed", status, null, null, null);
+                    }
+                    return null;
+                });
+    }
+
+    private CompletableFuture<OptimizeResult> waitForJobAsync(String jobId, long originalSize, long deadline) {
+        long waitMs = Math.min(config.getPollInterval().toMillis(),
+                Math.max(0L, TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime())));
+        return CompletableFuture.runAsync(() -> {}, CompletableFuture.delayedExecutor(waitMs, TimeUnit.MILLISECONDS))
+                .thenCompose(v -> getJobStatusAsync(jobId))
+                .thenCompose(status -> {
+                    if ("completed".equals(status.getStatus())) {
+                        long bytesSaved = status.getBytesSaved() != null ? status.getBytesSaved() : 0L;
+                        return CompletableFuture.completedFuture(new OptimizeResult(
+                                status.getJobId(), "completed", status.getUrl(), status.getFormat(),
+                                originalSize, originalSize - bytesSaved, bytesSaved, null,
+                                status.getModeApplied(), status.getQualityApplied(), status.getFolder()));
+                    }
+                    if ("failed".equals(status.getStatus())) {
+                        Object message = status.getError() != null ? status.getError().get("message") : null;
+                        throw new SmallPictException(
+                                message instanceof String && !((String) message).isEmpty()
+                                        ? (String) message : "The optimization job failed.",
+                                "job_failed", null, null, Map.of("job_id", jobId), null);
+                    }
+                    if (System.nanoTime() - deadline >= 0) {
+                        throw new TimeoutException("Job " + jobId + " did not finish within "
+                                + config.getWaitTimeout().toMillis() + "ms; poll getJobStatus(\"" + jobId + "\") later.");
+                    }
+                    return waitForJobAsync(jobId, originalSize, deadline);
                 });
     }
 
@@ -433,6 +487,16 @@ public class SmallPictClient {
 
         public Builder fallbackMode(FallbackMode fallbackMode) {
             configBuilder.fallbackMode(fallbackMode);
+            return this;
+        }
+
+        public Builder pollInterval(Duration pollInterval) {
+            configBuilder.pollInterval(pollInterval);
+            return this;
+        }
+
+        public Builder waitTimeout(Duration waitTimeout) {
+            configBuilder.waitTimeout(waitTimeout);
             return this;
         }
 
