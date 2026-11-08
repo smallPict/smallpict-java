@@ -217,4 +217,44 @@ class SmallPictClientTest {
         com.smallpict.errors.SmallPictException e = assertThrows(com.smallpict.errors.SmallPictException.class, client::getQuota);
         assertEquals("INVALID_RESPONSE", e.getErrorCode());
     }
+
+    private SmallPictClient signedClient(int maxRetries) {
+        return SmallPictClient.builder().apiKey("sp_sdk_test").secretKey("sec_test_secret_123")
+                .baseUrl(server.url("/").toString()).maxRetries(maxRetries).maxRetryDelay(java.time.Duration.ofMillis(5)).build();
+    }
+
+    private static final String QUOTA = "{\"plan\":\"free\",\"bytes_used\":0,\"quota_limit\":1,\"quota_percentage\":0.0}";
+
+    @Test
+    void requestSignatureMatchesTheRecomputedHmac() throws InterruptedException {
+        server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(QUOTA));
+        signedClient(0).getQuota();
+        RecordedRequest req = server.takeRequest();
+        String bodyHash = Crypto.sha256Hex(req.getBody().readByteArray());
+        String expected = Crypto.hmacSha256Hex("sec_test_secret_123",
+                Crypto.buildStringToSign(req.getMethod(), req.getPath(), req.getHeader("X-Timestamp"), bodyHash));
+        assertEquals(Crypto.EMPTY_SHA256, bodyHash);
+        assertEquals(expected, req.getHeader("X-Signature"));
+        assertEquals("sp_sdk_test", req.getHeader("X-API-Key"));
+    }
+
+    @Test
+    void statuses401And404And500MapToTheirExceptions() {
+        String body = "{\"error\":{\"code\":\"X\",\"message\":\"m\"}}";
+        server.enqueue(new MockResponse().setResponseCode(401).setBody(body));
+        assertThrows(com.smallpict.errors.AuthenticationException.class, () -> signedClient(0).getQuota());
+        server.enqueue(new MockResponse().setResponseCode(404).setBody(body));
+        assertThrows(com.smallpict.errors.NotFoundException.class, () -> signedClient(0).getQuota());
+        server.enqueue(new MockResponse().setResponseCode(500).setBody(body));
+        com.smallpict.errors.ServerException e = assertThrows(com.smallpict.errors.ServerException.class, () -> signedClient(0).getQuota());
+        assertEquals(500, e.getStatusCode());
+    }
+
+    @Test
+    void serverErrorIsRetriedOnce() {
+        server.enqueue(new MockResponse().setResponseCode(503).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(QUOTA));
+        assertEquals("free", signedClient(1).getQuota().getPlan());
+        assertEquals(2, server.getRequestCount());
+    }
 }

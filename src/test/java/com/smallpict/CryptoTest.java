@@ -32,4 +32,16 @@ class CryptoTest {
         assertEquals(64, sig.length());
         assertTrue(sig.matches("^[a-f0-9]{64}$"));
     }
+
+    @Test
+    void hmacSha256KnownAnswerRfc4231Case2() {
+        assertEquals("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843",
+                Crypto.hmacSha256Hex("Jefe", "what do ya want for nothing?"));
+    }
+
+    @Test
+    void stringToSignFollowsTheSpec() {
+        assertEquals("POST\n/v1/optimize\n1716301234\n" + Crypto.EMPTY_SHA256,
+                Crypto.buildStringToSign("POST", "/v1/optimize", "1716301234", Crypto.EMPTY_SHA256));
+    }
 }
