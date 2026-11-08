@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Spring Boot properties `smallpict.poll-interval` (default `1s`) and `smallpict.wait-timeout` (default `120s`). The auto-configured client stopped at `fallback-mode`, so a Spring service could not change the 0.1.0 poll and wait options without replacing the bean.
+
 ### Fixed
 - Typed exceptions keep the server's error code: a 402 `account_read_only` now reports `getErrorCode() == "account_read_only"` instead of `QUOTA_EXCEEDED`, a 429 `purge_rate_limited` keeps that code, `invalid_folder` is no longer reported as `VALIDATION_FAILED`. Each typed exception gained a constructor that takes the code; the class default applies when the body carries none.
 - Retry waits no longer block a `ForkJoinPool.commonPool()` thread and are capped. The backoff used `Thread.sleep` inside `runAsync`, so several concurrent 429s starved the common pool, and `Retry-After: 3600` waited an hour per attempt. The wait is now a `delayedExecutor` timer of at most `maxRetryDelay` (new builder option, default 30 s).

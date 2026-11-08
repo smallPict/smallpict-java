@@ -23,6 +23,8 @@ public class SmallPictAutoConfiguration {
                 .timeout(properties.getTimeout())
                 .maxRetries(properties.getMaxRetries())
                 .fallbackMode(properties.getFallbackMode())
+                .pollInterval(properties.getPollInterval())
+                .waitTimeout(properties.getWaitTimeout())
                 .build();
         return new SmallPictClient(config);
     }

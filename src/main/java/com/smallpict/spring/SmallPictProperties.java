@@ -12,6 +12,8 @@ public class SmallPictProperties {
     private Duration timeout = Duration.ofSeconds(30);
     private int maxRetries = 3;
     private FallbackMode fallbackMode = FallbackMode.THROW;
+    private Duration pollInterval = Duration.ofSeconds(1);
+    private Duration waitTimeout = Duration.ofSeconds(120);
 
     public String getApiKey() {
         return apiKey;
@@ -59,5 +61,21 @@ public class SmallPictProperties {
 
     public void setFallbackMode(FallbackMode fallbackMode) {
         this.fallbackMode = fallbackMode;
+    }
+
+    public Duration getPollInterval() {
+        return pollInterval;
+    }
+
+    public void setPollInterval(Duration pollInterval) {
+        this.pollInterval = pollInterval;
+    }
+
+    public Duration getWaitTimeout() {
+        return waitTimeout;
+    }
+
+    public void setWaitTimeout(Duration waitTimeout) {
+        this.waitTimeout = waitTimeout;
     }
 }

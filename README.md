@@ -107,6 +107,8 @@ smallpict:
   api-key: ${SMALLPICT_API_KEY}
   secret-key: ${SMALLPICT_SECRET_KEY}
   fallback-mode: passthrough # throw | passthrough
+  poll-interval: 1s          # between job status polls
+  wait-timeout: 120s         # before optimize() gives up with TimeoutException
 ```
 
 In your Spring Controller or Service:
