@@ -13,7 +13,12 @@ public class PermissionDeniedException extends SmallPictException {
     }
 
     public PermissionDeniedException(String message, String requestId, Map<String, Object> details) {
-        super(message, "FORBIDDEN", 403, requestId, details, null);
+        this(message, null, requestId, details);
+    }
+
+    /** {@code code} is the server's error code; {@code null} keeps the class default. */
+    public PermissionDeniedException(String message, String code, String requestId, Map<String, Object> details) {
+        super(message, code != null ? code : "FORBIDDEN", 403, requestId, details, null);
         Object modes = details != null ? details.get("allowed_modes") : null;
         if (modes instanceof List) {
             List<String> list = new ArrayList<>();

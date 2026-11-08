@@ -197,4 +197,11 @@ class CapacityTest {
         assertNull(new QuotaExceededException("m", null, details).getUpgradeUrl());
         assertNull(error(402, "QUOTA_EXCEEDED", "{\"upgrade_url\":42}").getUpgradeUrl());
     }
+
+    @Test
+    void typedExceptionsKeepTheServerCode() {
+        assertEquals("account_read_only", error(402, "account_read_only", "{}").getErrorCode());
+        assertEquals("purge_rate_limited", error(429, "purge_rate_limited", "{}").getErrorCode());
+        assertEquals("invalid_folder", error(400, "invalid_folder", "{}").getErrorCode());
+    }
 }

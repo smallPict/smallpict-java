@@ -433,7 +433,7 @@ public class SmallPictClient {
     private void handleError(int status, JsonNode body, String requestId, Long retryAfter) {
         String message = "API request failed with HTTP " + status;
         Map<String, Object> details = null;
-        String code = "INTERNAL_ERROR";
+        String code = null;
 
         if (body != null) {
             if (body.has("error")) {
@@ -455,17 +455,17 @@ public class SmallPictClient {
         }
 
         switch (status) {
-            case 400: throw new ValidationException(message, requestId, details);
-            case 401: throw new AuthenticationException(message, requestId, details);
-            case 402: throw new QuotaExceededException(message, requestId, details);
-            case 403: throw new PermissionDeniedException(message, requestId, details);
-            case 404: throw new NotFoundException(message, requestId, details);
-            case 429: throw new RateLimitException(message, retryAfter, requestId, details);
+            case 400: throw new ValidationException(message, code, requestId, details);
+            case 401: throw new AuthenticationException(message, code, requestId, details);
+            case 402: throw new QuotaExceededException(message, code, requestId, details);
+            case 403: throw new PermissionDeniedException(message, code, requestId, details);
+            case 404: throw new NotFoundException(message, code, requestId, details);
+            case 429: throw new RateLimitException(message, code, retryAfter, requestId, details);
             default:
                 if (status >= 500) {
-                    throw new ServerException(message, status, requestId, details);
+                    throw new ServerException(message, code, status, requestId, details);
                 }
-                throw new SmallPictException(message, code, status, requestId, details, null);
+                throw new SmallPictException(message, code != null ? code : "INTERNAL_ERROR", status, requestId, details, null);
         }
     }
 
