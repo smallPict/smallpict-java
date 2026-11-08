@@ -208,4 +208,13 @@ class SmallPictClientTest {
         assertTrue(System.nanoTime() - started < 5_000_000_000L, "retry waited for the uncapped Retry-After");
         assertEquals(2, server.getRequestCount());
     }
+
+    @Test
+    void nonJsonSuccessBodyIsAnInvalidResponseError() {
+        server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "text/html").setBody("<html>proxy</html>"));
+        SmallPictClient client = SmallPictClient.builder().apiKey("sp_sdk_test").secretKey("sec_test").baseUrl(server.url("/").toString()).build();
+
+        com.smallpict.errors.SmallPictException e = assertThrows(com.smallpict.errors.SmallPictException.class, client::getQuota);
+        assertEquals("INVALID_RESPONSE", e.getErrorCode());
+    }
 }

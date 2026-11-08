@@ -415,6 +415,11 @@ public class SmallPictClient {
                     if (statusCode < 200 || statusCode >= 300) {
                         handleError(statusCode, jsonNode, requestId, retryAfter);
                     }
+                    if (jsonNode == null) {
+                        // A proxy or WAF page with a 2xx: callers used to get null (or an NPE in optimize).
+                        throw new SmallPictException("Empty or non-JSON response (HTTP " + statusCode + ")",
+                                "INVALID_RESPONSE", statusCode, requestId, null, null);
+                    }
 
                     return CompletableFuture.completedFuture(jsonNode);
                 })
