@@ -21,7 +21,11 @@ public class SmallPictConfig {
         }
 
         this.apiKey = resolvedKey;
-        this.secretKey = builder.secretKey != null ? builder.secretKey : System.getenv("SMALLPICT_SECRET_KEY");
+        String resolvedSecret = builder.secretKey != null ? builder.secretKey : System.getenv("SMALLPICT_SECRET_KEY");
+        if (resolvedSecret == null || resolvedSecret.trim().isEmpty()) {
+            throw new ValidationException("Missing required SmallPict secret key. Set `secretKey` or set SMALLPICT_SECRET_KEY environment variable.");
+        }
+        this.secretKey = resolvedSecret;
         String base = builder.baseUrl != null ? builder.baseUrl : System.getenv("SMALLPICT_BASE_URL");
         this.baseUrl = (base != null ? base : "https://api.smallpict.app").replaceAll("/+$", "");
         this.timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(30);

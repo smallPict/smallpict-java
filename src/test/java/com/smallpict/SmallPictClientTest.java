@@ -90,6 +90,7 @@ class SmallPictClientTest {
 
         SmallPictClient client = SmallPictClient.builder()
                 .apiKey("sp_sdk_test")
+                .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
                 .build();
 
@@ -112,6 +113,7 @@ class SmallPictClientTest {
 
         SmallPictClient client = SmallPictClient.builder()
                 .apiKey("sp_sdk_test")
+                .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
                 .build();
 
@@ -125,11 +127,11 @@ class SmallPictClientTest {
     @Test
     void testValidateKey() {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{\"plan\":\"free\"}"));
-        SmallPictClient validClient = SmallPictClient.builder().apiKey("sp_sdk_valid").baseUrl(server.url("/").toString()).build();
+        SmallPictClient validClient = SmallPictClient.builder().apiKey("sp_sdk_valid").secretKey("sec_test").baseUrl(server.url("/").toString()).build();
         assertTrue(validClient.validateKey());
 
         server.enqueue(new MockResponse().setResponseCode(401).setBody("{\"error\":{\"code\":\"UNAUTHORIZED\"}}"));
-        SmallPictClient invalidClient = SmallPictClient.builder().apiKey("sp_sdk_invalid").baseUrl(server.url("/").toString()).build();
+        SmallPictClient invalidClient = SmallPictClient.builder().apiKey("sp_sdk_invalid").secretKey("sec_test").baseUrl(server.url("/").toString()).build();
         assertFalse(invalidClient.validateKey());
     }
 
@@ -142,6 +144,7 @@ class SmallPictClientTest {
 
         SmallPictClient client = SmallPictClient.builder()
                 .apiKey("sp_sdk_test")
+                .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
                 .fallbackMode(FallbackMode.PASSTHROUGH)
                 .build();
@@ -153,5 +156,12 @@ class SmallPictClientTest {
         assertEquals("completed", result.getStatus());
         assertEquals(0.0, result.getSavingsPercentage());
         assertArrayEquals(rawData, result.getData());
+    }
+
+    @Test
+    void builderWithoutSecretKeyIsValidationError() {
+        com.smallpict.errors.ValidationException e = assertThrows(com.smallpict.errors.ValidationException.class,
+                () -> SmallPictClient.builder().apiKey("sp_sdk_test").secretKey("").baseUrl(server.url("/").toString()).build());
+        assertTrue(e.getMessage().contains("secret key"), e.getMessage());
     }
 }

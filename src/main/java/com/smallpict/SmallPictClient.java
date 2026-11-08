@@ -364,14 +364,9 @@ public class SmallPictClient {
             builder.method(method, HttpRequest.BodyPublishers.noBody());
         }
 
-        if (config.getSecretKey() != null) {
-            String stringToSign = Crypto.buildStringToSign(method, path, timestamp, bodyHash);
-            String signature = Crypto.hmacSha256Hex(config.getSecretKey(), stringToSign);
-            builder.header("X-Timestamp", timestamp);
-            builder.header("X-Signature", signature);
-        } else {
-            builder.header("Authorization", "Bearer " + config.getApiKey());
-        }
+        String stringToSign = Crypto.buildStringToSign(method, path, timestamp, bodyHash);
+        builder.header("X-Timestamp", timestamp);
+        builder.header("X-Signature", Crypto.hmacSha256Hex(config.getSecretKey(), stringToSign));
 
         if ("POST".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)) {
             builder.header("Idempotency-Key", idempotencyKey != null ? idempotencyKey : UUID.randomUUID().toString());

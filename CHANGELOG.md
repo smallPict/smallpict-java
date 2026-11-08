@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The synchronous methods throw the typed exception.** `optimize`, `getQuota`, `purgeCdn`, `validateKey` and `getJobStatus` used `CompletableFuture.join()`, which wraps every failure in `java.util.concurrent.CompletionException`, so `catch (QuotaExceededException e)` never matched. They now rethrow the `SmallPictException` (or any `RuntimeException`) the async call failed with.
 
 ### Changed
+- **`secretKey` is required.** `SmallPictConfig` throws `ValidationException` when neither `secretKey` nor `SMALLPICT_SECRET_KEY` is set. The Bearer-only mode (API key without signature) is gone: the API refuses it with 401 or 403, so a client built that way never worked. The README no longer calls the secret optional.
 - Release workflow runs the test suite before `mvn deploy` (no more `-DskipTests`); a tag on a commit that fails it no longer publishes. Actions are pinned to commit SHAs. The retired OSSRH `distributionManagement` block is gone (publishing goes through the Central Portal plugin), and the compiler uses `release` 17 so the JDK 21 CI job also checks the Java 17 API.
 
 ## [0.1.0] - 2026-11-05
