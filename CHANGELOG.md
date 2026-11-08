@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Retry waits no longer block a `ForkJoinPool.commonPool()` thread and are capped. The backoff used `Thread.sleep` inside `runAsync`, so several concurrent 429s starved the common pool, and `Retry-After: 3600` waited an hour per attempt. The wait is now a `delayedExecutor` timer of at most `maxRetryDelay` (new builder option, default 30 s).
 - Every request carries a fresh `X-Nonce`, so a retry inside the same second is no longer refused by the server as a replay (401 "Replay attack detected"); before, a transient 429 or 5xx could surface as `AuthenticationException`. `Idempotency-Key` is generated once per call and kept across retries instead of once per attempt.
 - **The synchronous methods throw the typed exception.** `optimize`, `getQuota`, `purgeCdn`, `validateKey` and `getJobStatus` used `CompletableFuture.join()`, which wraps every failure in `java.util.concurrent.CompletionException`, so `catch (QuotaExceededException e)` never matched. They now rethrow the `SmallPictException` (or any `RuntimeException`) the async call failed with.
 

@@ -186,4 +186,26 @@ class SmallPictClientTest {
         assertNotEquals(first.getHeader("X-Nonce"), second.getHeader("X-Nonce"));
         assertEquals(first.getHeader("Idempotency-Key"), second.getHeader("Idempotency-Key"));
     }
+
+    @Test
+    void retryAfterIsCappedAndDoesNotBlockTheCaller() {
+        server.enqueue(new MockResponse().setResponseCode(503).setHeader("Retry-After", "3600")
+                .setHeader("Content-Type", "application/json").setBody("{\"error\":{\"message\":\"busy\"}}"));
+        server.enqueue(new MockResponse().setResponseCode(202).setHeader("Content-Type", "application/json")
+                .setBody("{\"message\":\"Purge accepted\"}"));
+        SmallPictClient client = SmallPictClient.builder()
+                .apiKey("sp_sdk_test")
+                .secretKey("sec_test")
+                .baseUrl(server.url("/").toString())
+                .maxRetries(1)
+                .maxRetryDelay(java.time.Duration.ofMillis(5))
+                .build();
+
+        long started = System.nanoTime();
+        PurgeResponse res = client.purgeCdn(List.of("https://cdn.smallpict.app/opt/hero.avif"), PurgeType.URL);
+
+        assertEquals("Purge accepted", res.getMessage());
+        assertTrue(System.nanoTime() - started < 5_000_000_000L, "retry waited for the uncapped Retry-After");
+        assertEquals(2, server.getRequestCount());
+    }
 }

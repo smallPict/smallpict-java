@@ -405,14 +405,11 @@ public class SmallPictClient {
                                 ? retryAfter * 1000L
                                 : 250L * (1L << (attempt - 1));
                         final long jitter = ThreadLocalRandom.current().nextLong(0, 100);
+                        // A timer, not Thread.sleep on the common pool: many 429s at once would starve it.
+                        final long waitMs = Math.min(delayMs + jitter, config.getMaxRetryDelay().toMillis());
 
                         return CompletableFuture.runAsync(() -> {
-                            try {
-                                Thread.sleep(delayMs + jitter);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                            }
-                        }).thenCompose(v -> executeWithRetryAsync(method, endpointUrl, path, bodyBytes, bodyHash, idempotencyKey, attempt + 1));
+                        }, CompletableFuture.delayedExecutor(waitMs, TimeUnit.MILLISECONDS)).thenCompose(v -> executeWithRetryAsync(method, endpointUrl, path, bodyBytes, bodyHash, idempotencyKey, attempt + 1));
                     }
 
                     if (statusCode < 200 || statusCode >= 300) {
@@ -512,6 +509,11 @@ public class SmallPictClient {
 
         public Builder waitTimeout(Duration waitTimeout) {
             configBuilder.waitTimeout(waitTimeout);
+            return this;
+        }
+
+        public Builder maxRetryDelay(Duration maxRetryDelay) {
+            configBuilder.maxRetryDelay(maxRetryDelay);
             return this;
         }
 

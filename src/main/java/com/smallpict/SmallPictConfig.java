@@ -13,6 +13,7 @@ public class SmallPictConfig {
     private final FallbackMode fallbackMode;
     private final Duration pollInterval;
     private final Duration waitTimeout;
+    private final Duration maxRetryDelay;
 
     private SmallPictConfig(Builder builder) {
         String resolvedKey = builder.apiKey != null ? builder.apiKey : System.getenv("SMALLPICT_API_KEY");
@@ -33,6 +34,7 @@ public class SmallPictConfig {
         this.fallbackMode = builder.fallbackMode != null ? builder.fallbackMode : FallbackMode.THROW;
         this.pollInterval = builder.pollInterval != null ? builder.pollInterval : Duration.ofSeconds(1);
         this.waitTimeout = builder.waitTimeout != null ? builder.waitTimeout : Duration.ofSeconds(120);
+        this.maxRetryDelay = builder.maxRetryDelay != null ? builder.maxRetryDelay : Duration.ofSeconds(30);
     }
 
     public static Builder builder() {
@@ -73,6 +75,11 @@ public class SmallPictConfig {
         return waitTimeout;
     }
 
+    /** Longest wait between attempts, whatever Retry-After says (default 30 s). */
+    public Duration getMaxRetryDelay() {
+        return maxRetryDelay;
+    }
+
     public static class Builder {
         private String apiKey;
         private String secretKey;
@@ -82,6 +89,7 @@ public class SmallPictConfig {
         private FallbackMode fallbackMode = FallbackMode.THROW;
         private Duration pollInterval = Duration.ofSeconds(1);
         private Duration waitTimeout = Duration.ofSeconds(120);
+        private Duration maxRetryDelay;
 
         public Builder apiKey(String apiKey) {
             this.apiKey = apiKey;
@@ -120,6 +128,11 @@ public class SmallPictConfig {
 
         public Builder waitTimeout(Duration waitTimeout) {
             this.waitTimeout = waitTimeout;
+            return this;
+        }
+
+        public Builder maxRetryDelay(Duration maxRetryDelay) {
+            this.maxRetryDelay = maxRetryDelay;
             return this;
         }
 
