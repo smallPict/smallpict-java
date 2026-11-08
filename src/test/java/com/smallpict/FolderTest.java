@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,10 +58,6 @@ class FolderTest {
         return mapper.readTree(server.takeRequest().getBody().readUtf8());
     }
 
-    private static Throwable unwrap(Throwable t) {
-        return t instanceof CompletionException && t.getCause() != null ? t.getCause() : t;
-    }
-
     @Test
     void optimizeSendsFolderAndSurfacesIt() throws Exception {
         enqueueJob("{\"job_id\":\"job_1\",\"status\":\"completed\",\"folder\":\"blog/2026\"}");
@@ -92,7 +87,7 @@ class FolderTest {
         for (String folder : MALFORMED) {
             Throwable t = assertThrows(Throwable.class,
                     () -> client.optimize("img".getBytes(), OptimizeOptions.builder().folder(folder).build()), folder);
-            assertInstanceOf(ValidationException.class, unwrap(t), folder);
+            assertInstanceOf(ValidationException.class, t, folder);
         }
         assertEquals(0, server.getRequestCount());
     }
@@ -101,7 +96,7 @@ class FolderTest {
     void purgeRejectsMalformedFolderWithoutRequest() {
         for (String folder : MALFORMED) {
             Throwable t = assertThrows(Throwable.class, () -> client.purgeCdn(null, PurgeType.FOLDER, folder), folder);
-            assertInstanceOf(ValidationException.class, unwrap(t), folder);
+            assertInstanceOf(ValidationException.class, t, folder);
         }
         assertEquals(0, server.getRequestCount());
     }
@@ -110,7 +105,7 @@ class FolderTest {
     void purgeFolderRequiresFolder() {
         for (String missing : new String[] {null, "", "  "}) {
             Throwable t = assertThrows(Throwable.class, () -> client.purgeCdn(null, PurgeType.FOLDER, missing));
-            assertInstanceOf(ValidationException.class, unwrap(t));
+            assertInstanceOf(ValidationException.class, t);
         }
         assertEquals(0, server.getRequestCount());
     }
@@ -143,7 +138,7 @@ class FolderTest {
         enqueueJson(400, "{\"error\":{\"code\":\"invalid_folder\",\"message\":\"folder segment too long\"}}");
         Throwable t = assertThrows(Throwable.class,
                 () -> client.optimize("img".getBytes(), OptimizeOptions.builder().folder("ok").build()));
-        ValidationException e = assertInstanceOf(ValidationException.class, unwrap(t));
+        ValidationException e = assertInstanceOf(ValidationException.class, t);
         assertEquals("folder segment too long", e.getMessage());
     }
 
@@ -152,7 +147,7 @@ class FolderTest {
         enqueueJson(429, "{\"error\":{\"code\":\"purge_rate_limited\",\"message\":\"Too many folder purges\"}}");
         enqueueJson(202, "{\"message\":\"ok\"}");
         Throwable t = assertThrows(Throwable.class, () -> client.purgeCdn(null, PurgeType.FOLDER, "a"));
-        RateLimitException e = assertInstanceOf(RateLimitException.class, unwrap(t));
+        RateLimitException e = assertInstanceOf(RateLimitException.class, t);
         assertEquals("Too many folder purges", e.getMessage());
         assertEquals(1, server.getRequestCount());
     }

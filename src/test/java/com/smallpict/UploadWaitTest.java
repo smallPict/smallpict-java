@@ -1,5 +1,6 @@
 package com.smallpict;
 
+import com.smallpict.errors.QuotaExceededException;
 import com.smallpict.errors.SmallPictException;
 import com.smallpict.errors.TimeoutException;
 import com.smallpict.models.OptimizeOptions;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,10 +49,6 @@ class UploadWaitTest {
 
     private void enqueueJson(int status, String body) {
         server.enqueue(new MockResponse().setResponseCode(status).setHeader("Content-Type", "application/json").setBody(body));
-    }
-
-    private static Throwable unwrap(Throwable t) {
-        return t instanceof CompletionException && t.getCause() != null ? t.getCause() : t;
     }
 
     private OptimizeResult optimizePng() {
@@ -109,7 +105,7 @@ class UploadWaitTest {
         server.enqueue(new MockResponse().setResponseCode(200));
         enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"failed\",\"error\":{\"message\":\"client upload never arrived\"}}");
 
-        Throwable t = unwrap(assertThrows(Throwable.class, this::optimizePng));
+        Throwable t = assertThrows(Throwable.class, this::optimizePng);
         SmallPictException e = assertInstanceOf(SmallPictException.class, t);
         assertEquals("job_failed", e.getErrorCode());
         assertEquals("client upload never arrived", e.getMessage());
@@ -131,7 +127,7 @@ class UploadWaitTest {
             }
         });
 
-        Throwable t = unwrap(assertThrows(Throwable.class, this::optimizePng));
+        Throwable t = assertThrows(Throwable.class, this::optimizePng);
         TimeoutException e = assertInstanceOf(TimeoutException.class, t);
         assertTrue(e.getMessage().contains("job_1"), e.getMessage());
         assertTrue(e.getMessage().contains("getJobStatus"), e.getMessage());
@@ -142,7 +138,7 @@ class UploadWaitTest {
         enqueueJson(200, queued());
         server.enqueue(new MockResponse().setResponseCode(403).setBody("SignatureDoesNotMatch"));
 
-        Throwable t = unwrap(assertThrows(Throwable.class, this::optimizePng));
+        Throwable t = assertThrows(Throwable.class, this::optimizePng);
         SmallPictException e = assertInstanceOf(SmallPictException.class, t);
         assertEquals("upload_failed", e.getErrorCode());
         assertEquals(403, e.getStatusCode());
@@ -158,9 +154,16 @@ class UploadWaitTest {
         server.enqueue(new MockResponse().setResponseCode(200));
         enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"failed\",\"error\":{\"message\":\"boom\"}}");
 
-        Throwable t = unwrap(assertThrows(Throwable.class,
-                () -> client.optimize(f, OptimizeOptions.builder().mimeType("image/png").build())));
+        Throwable t = assertThrows(Throwable.class,
+                () -> client.optimize(f, OptimizeOptions.builder().mimeType("image/png").build()));
         assertEquals("job_failed", assertInstanceOf(SmallPictException.class, t).getErrorCode());
         java.nio.file.Files.delete(f);
+    }
+
+    @Test
+    void syncMethodsThrowTheTypedException() {
+        enqueueJson(402, "{\"error\":{\"code\":\"QUOTA_EXCEEDED\",\"message\":\"Quota exhausted\"}}");
+        QuotaExceededException e = assertThrows(QuotaExceededException.class, this::optimizePng);
+        assertEquals("QUOTA_EXCEEDED", e.getErrorCode());
     }
 }

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -147,9 +146,6 @@ class CapacityTest {
         server.enqueue(new MockResponse().setResponseCode(status).setHeader("Content-Type", "application/json")
                 .setBody("{\"error\":{\"code\":\"" + code + "\",\"message\":\"m\",\"details\":" + detailsJson + "}}"));
         Throwable t = assertThrows(Throwable.class, () -> client.getQuota());
-        if (t instanceof CompletionException && t.getCause() != null) {
-            t = t.getCause();
-        }
         return assertInstanceOf(SmallPictException.class, t, status + " " + code);
     }
 

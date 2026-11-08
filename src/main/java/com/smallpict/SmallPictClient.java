@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -68,8 +69,20 @@ public class SmallPictClient {
 
     // --- Synchronous 4 Core Methods ---
 
+    /** join() wraps failures in CompletionException; callers of the sync API get the typed exception. */
+    private static <T> T sync(CompletableFuture<T> future) {
+        try {
+            return future.join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw e;
+        }
+    }
+
     public OptimizeResult optimize(byte[] data, OptimizeOptions options) {
-        return optimizeAsync(data, options).join();
+        return sync(optimizeAsync(data, options));
     }
 
     public OptimizeResult optimize(File file, OptimizeOptions options) {
@@ -102,24 +115,24 @@ public class SmallPictClient {
     }
 
     public QuotaResponse getQuota() {
-        return getQuotaAsync().join();
+        return sync(getQuotaAsync());
     }
 
     public PurgeResponse purgeCdn(List<String> urls, PurgeType purgeType) {
-        return purgeCdnAsync(urls, purgeType).join();
+        return sync(purgeCdnAsync(urls, purgeType));
     }
 
     /** Purge with a folder; {@code folder} is required for {@link PurgeType#FOLDER} and sent only with it. */
     public PurgeResponse purgeCdn(List<String> urls, PurgeType purgeType, String folder) {
-        return purgeCdnAsync(urls, purgeType, folder).join();
+        return sync(purgeCdnAsync(urls, purgeType, folder));
     }
 
     public boolean validateKey() {
-        return validateKeyAsync().join();
+        return sync(validateKeyAsync());
     }
 
     public JobStatusResult getJobStatus(String jobId) {
-        return getJobStatusAsync(jobId).join();
+        return sync(getJobStatusAsync(jobId));
     }
 
     // --- Asynchronous CompletableFuture Methods ---

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The synchronous methods throw the typed exception.** `optimize`, `getQuota`, `purgeCdn`, `validateKey` and `getJobStatus` used `CompletableFuture.join()`, which wraps every failure in `java.util.concurrent.CompletionException`, so `catch (QuotaExceededException e)` never matched. They now rethrow the `SmallPictException` (or any `RuntimeException`) the async call failed with.
+
 ### Changed
 - Release workflow runs the test suite before `mvn deploy` (no more `-DskipTests`); a tag on a commit that fails it no longer publishes. Actions are pinned to commit SHAs. The retired OSSRH `distributionManagement` block is gone (publishing goes through the Central Portal plugin), and the compiler uses `release` 17 so the JDK 21 CI job also checks the Java 17 API.
 

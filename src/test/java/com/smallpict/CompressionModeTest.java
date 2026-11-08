@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -127,9 +126,6 @@ class CompressionModeTest {
 
         Throwable t = assertThrows(Throwable.class,
                 () -> client.optimize("img".getBytes(), OptimizeOptions.builder().mode(CompressionMode.LOSSLESS).build()));
-        if (t instanceof CompletionException) {
-            t = t.getCause();
-        }
         PermissionDeniedException e = assertInstanceOf(PermissionDeniedException.class, t);
         assertEquals("Lossless is not in your plan", e.getMessage());
         assertEquals("lossless", e.getDetails().get("mode"));
