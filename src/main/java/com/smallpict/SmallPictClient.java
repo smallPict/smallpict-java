@@ -81,6 +81,10 @@ public class SmallPictClient {
         }
     }
 
+    /**
+     * Queues the job, uploads the bytes and waits for the finished result.
+     * A retry after a 5xx may create a second job until the server honours {@code Idempotency-Key}.
+     */
     public OptimizeResult optimize(byte[] data, OptimizeOptions options) {
         return sync(optimizeAsync(data, options));
     }
@@ -338,7 +342,8 @@ public class SmallPictClient {
             }
         }
 
-        return executeWithRetryAsync(method, endpointUrl, cleanPath, bodyBytes, bodyHash, idempotencyKey, 1);
+        String idem = idempotencyKey != null ? idempotencyKey : UUID.randomUUID().toString();
+        return executeWithRetryAsync(method, endpointUrl, cleanPath, bodyBytes, bodyHash, idem, 1);
     }
 
     private CompletableFuture<JsonNode> executeWithRetryAsync(
@@ -368,8 +373,10 @@ public class SmallPictClient {
         builder.header("X-Timestamp", timestamp);
         builder.header("X-Signature", Crypto.hmacSha256Hex(config.getSecretKey(), stringToSign));
 
+        // The server rejects a repeated signature as a replay unless the nonce differs.
+        builder.header("X-Nonce", UUID.randomUUID().toString());
         if ("POST".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)) {
-            builder.header("Idempotency-Key", idempotencyKey != null ? idempotencyKey : UUID.randomUUID().toString());
+            builder.header("Idempotency-Key", idempotencyKey);
         }
 
         return httpClient.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray())

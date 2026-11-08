@@ -164,4 +164,26 @@ class SmallPictClientTest {
                 () -> SmallPictClient.builder().apiKey("sp_sdk_test").secretKey("").baseUrl(server.url("/").toString()).build());
         assertTrue(e.getMessage().contains("secret key"), e.getMessage());
     }
+
+    @Test
+    void retrySendsNewNonceAndSameIdempotencyKey() throws InterruptedException {
+        server.enqueue(new MockResponse().setResponseCode(503).setHeader("Content-Type", "application/json")
+                .setBody("{\"error\":{\"code\":\"INTERNAL_ERROR\",\"message\":\"try again\"}}"));
+        server.enqueue(new MockResponse().setResponseCode(202).setHeader("Content-Type", "application/json")
+                .setBody("{\"message\":\"Purge accepted\"}"));
+        SmallPictClient client = SmallPictClient.builder()
+                .apiKey("sp_sdk_test")
+                .secretKey("sec_test")
+                .baseUrl(server.url("/").toString())
+                .maxRetries(1)
+                .build();
+
+        client.purgeCdn(List.of("https://cdn.smallpict.app/opt/hero.avif"), PurgeType.URL);
+
+        RecordedRequest first = server.takeRequest();
+        RecordedRequest second = server.takeRequest();
+        assertNotNull(first.getHeader("X-Nonce"), "no X-Nonce on the first attempt");
+        assertNotEquals(first.getHeader("X-Nonce"), second.getHeader("X-Nonce"));
+        assertEquals(first.getHeader("Idempotency-Key"), second.getHeader("Idempotency-Key"));
+    }
 }
