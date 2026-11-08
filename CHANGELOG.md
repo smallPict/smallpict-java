@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Release workflow runs the test suite before `mvn deploy` (no more `-DskipTests`); a tag on a commit that fails it no longer publishes. Actions are pinned to commit SHAs. The retired OSSRH `distributionManagement` block is gone (publishing goes through the Central Portal plugin), and the compiler uses `release` 17 so the JDK 21 CI job also checks the Java 17 API.
+
 ## [0.1.0] - 2026-11-05
 
 ### Fixed
