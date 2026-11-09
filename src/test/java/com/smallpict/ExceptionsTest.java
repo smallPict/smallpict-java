@@ -38,4 +38,10 @@ class ExceptionsTest {
         assertEquals(500, new ServerException("Crash", 500, null, null).getStatusCode());
         assertEquals(408, new TimeoutException("Timed out").getStatusCode());
     }
+
+    @Test
+    void sanitizeMasksServerIssuedSecrets() {
+        String secret = "sps_" + "ab12".repeat(16);
+        assertFalse(SmallPictException.sanitize("bad key " + secret).contains(secret));
+    }
 }

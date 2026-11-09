@@ -2,7 +2,7 @@
 
 Official Java SDK for the [SmallPict Image Optimization API](https://smallpict.app) — high-performance next-gen image transcoding (AVIF, WebP), smart compression, Edge CDN delivery, cache purging, and Spring Boot auto-configuration.
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.smallpict/smallpict-java.svg)](https://search.maven.org/artifact/com.smallpict/smallpict-java)
+[![Maven Central](https://img.shields.io/maven-central/v/app.smallpict/smallpict-java.svg)](https://central.sonatype.com/artifact/app.smallpict/smallpict-java)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Java 17+](https://img.shields.io/badge/java-17%2B-orange.svg)](https://openjdk.org)
 
@@ -10,7 +10,7 @@ Official Java SDK for the [SmallPict Image Optimization API](https://smallpict.a
 
 ## ⚡ Features
 
-- **☕ 100% Native Java 11+ `HttpClient`:** Zero external third-party HTTP transport dependencies.
+- **☕ Native Java 17+ `HttpClient`:** Zero external third-party HTTP transport dependencies.
 - **⚡ Dual Synchronous & `CompletableFuture` Asynchronous APIs:** High concurrency without blocking I/O threads.
 - **🌱 Spring Boot Auto-Configuration:** Instant injection via `smallpict.api-key` in `application.yml`.
 - **🛡️ HMAC-SHA256 request signing:** every request is signed with your secret key; both `apiKey` and `secretKey` are required.
@@ -100,6 +100,8 @@ The server checks the mode against your plan. A mode the plan does not include f
 
 ### 2. Spring Boot 3 Integration
 
+The properties bean holds `smallpict.api-key` and `smallpict.secret-key`. Spring Boot masks them on `/actuator/configprops` and `/actuator/env` by default; keep `management.endpoint.configprops.show-values` and `management.endpoint.env.show-values` at `NEVER` in production, or register a `SanitizingFunction` for `smallpict.*`.
+
 In `application.yml`:
 
 ```yaml
@@ -180,7 +182,7 @@ Every `SmallPictException` has `getUpgradeUrl()` (`null` when absent). `storage_
 
 ## 🔒 Security & Schema Compatibility (2026)
 
-- **`mimeType` & `contentType` Dual Support**: `OptimizeOptions` provides both `getMimeType()` and `getContentType()`, and the builder accepts either `mimeType(String)` or `contentType(String)`. Requests sent via `SmallPictClient` send both `mime_type` and `content_type` fields in the payload, ensuring zero-disruption compatibility across all SmallPict API versions.
+- **`contentType` alias**: the builder still accepts `contentType(String)` as an alias of `mimeType(String)` for older callers; only `mime_type` is sent, which is the field the API reads.
 
 ---
 

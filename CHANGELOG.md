@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `SmallPictException.sanitize` masks server-issued `sps_...` secrets; the pattern knew only the `sec_`/`secret_` test fixtures, so a real secret pasted into a message was printed in full.
 - The `upload_failed` message keeps at most 300 characters of the storage body. An S3 error document runs to kilobytes and repeats the pre-signed query, and the whole of it landed in exception messages and logs.
 - `waitTimeout` starts after the upload PUT, so it bounds the polling only, as SDK_SPEC section 3d.3 says. A slow upload used to eat into the 120 s and could end in `TimeoutException` while the job had barely started.
 
@@ -49,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README: "What `optimize()` does".
 
 ## [0.0.7] - 2026-10-31
+
+Version numbering restarted at 0.0.1 when the artifact moved to the `app.smallpict` group id; the 1.0.0 entry below belongs to the old `io.github.tuxnoob` coordinates.
 
 ### Added
 - `CompressionMode.AUTO` (`"auto"`): the server picks the lowest quality per image that keeps the visual score (SSIMULACRA 2) at or above 70, and ignores `quality` (CMP-07). Plans: WP Pro and Business, Velocity, Momentum and sandbox (5 auto jobs per minute per sandbox key); where it cannot search (PNG or GIF output, animation, time limit) the job is lossy and `modeApplied` says so. A server without auto enabled answers `400 invalid_mode`.

@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class SmallPictException extends RuntimeException {
     private static final Pattern KEY_PATTERN = Pattern.compile("sp_(test|sdk|wp)_[a-zA-Z0-9_-]{10,}");
-    private static final Pattern SECRET_PATTERN = Pattern.compile("(?i)(sec|secret)_[a-zA-Z0-9_-]{8,}");
+    private static final Pattern SECRET_PATTERN = Pattern.compile("(?i)(sps_[a-f0-9]{16,}|(sec|secret)_[a-zA-Z0-9_-]{8,})");
     private static final Pattern BEARER_PATTERN = Pattern.compile("(?i)Bearer\\s+[a-zA-Z0-9._-]+");
 
     private final String errorCode;
