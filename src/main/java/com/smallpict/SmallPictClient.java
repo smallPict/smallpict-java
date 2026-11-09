@@ -23,7 +23,6 @@ import com.smallpict.models.PurgeType;
 import com.smallpict.models.QuotaResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -152,7 +151,6 @@ public class SmallPictClient {
         Map<String, Object> payload = new HashMap<>();
         payload.put("filename", filename);
         payload.put("mime_type", mimeType);
-        payload.put("content_type", mimeType);
         payload.put("filesize", data.length);
         payload.put("options", opts);
 

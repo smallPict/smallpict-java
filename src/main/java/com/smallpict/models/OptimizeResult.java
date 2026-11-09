@@ -42,7 +42,7 @@ public class OptimizeResult {
         this.jobId = jobId != null ? jobId : "sync";
         this.status = status != null ? status : "completed";
         this.url = url != null ? url : "";
-        this.format = format != null ? format : "auto";
+        this.format = format; // absent in the status stays absent; never filled from the request
         this.originalSize = originalSize != null ? originalSize : 0L;
         this.compressedSize = compressedSize != null ? compressedSize : this.originalSize;
         this.bytesSaved = bytesSaved != null ? bytesSaved : Math.max(0L, this.originalSize - this.compressedSize);

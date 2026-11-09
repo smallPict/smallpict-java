@@ -196,4 +196,19 @@ class UploadWaitTest {
         assertEquals("upload_failed", e.getErrorCode());
         assertTrue(e.getMessage().length() < 400, "message length " + e.getMessage().length());
     }
+
+    @Test
+    void payloadCarriesOnlyFieldsTheApiReadsAndAbsentFormatStaysNull() throws Exception {
+        enqueueJson(200, queued());
+        server.enqueue(new MockResponse().setResponseCode(200));
+        enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"completed\",\"url\":\"https://cdn/a\",\"bytes_saved\":1}");
+
+        OptimizeResult r = optimizePng();
+
+        RecordedRequest post = server.takeRequest(2, java.util.concurrent.TimeUnit.SECONDS);
+        com.fasterxml.jackson.databind.JsonNode body = new com.fasterxml.jackson.databind.ObjectMapper().readTree(post.getBody().readByteArray());
+        assertFalse(body.has("content_type"), body.toString());
+        assertEquals("image/png", body.get("mime_type").asText());
+        assertNull(r.getFormat(), "format must stay null when the status omits it");
+    }
 }

@@ -12,7 +12,7 @@ Official Java SDK for the [SmallPict Image Optimization API](https://smallpict.a
 
 - **☕ 100% Native Java 11+ `HttpClient`:** Zero external third-party HTTP transport dependencies.
 - **⚡ Dual Synchronous & `CompletableFuture` Asynchronous APIs:** High concurrency without blocking I/O threads.
-- **🌱 Spring Boot Auto-Configuration:** Instant injection via `smallpict.api-key` in `application.yml` / `@EnableSmallPict`.
+- **🌱 Spring Boot Auto-Configuration:** Instant injection via `smallpict.api-key` in `application.yml`.
 - **🛡️ HMAC-SHA256 request signing:** every request is signed with your secret key; both `apiKey` and `secretKey` are required.
 - **✨ 4 Core Unified Methods:** `optimize()`, `getQuota()`, `purgeCdn()`, and `validateKey()`.
 - **🔄 Resilience & Fault Tolerance:** Automatic `Idempotency-Key` UUID injection, 30s timeouts, and exponential backoff with jitter on HTTP 429/5xx.

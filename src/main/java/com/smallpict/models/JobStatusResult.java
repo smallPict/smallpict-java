@@ -23,11 +23,15 @@ public class JobStatusResult {
     private final Integer qualityApplied;
     private final String folder;
 
+    /** @deprecated Unused; removed in the next major. Use the full constructor or Jackson. */
+    @Deprecated
     public JobStatusResult(String jobId, String status, String url, String format, Long bytesSaved,
             Map<String, Object> error, String createdAt, String updatedAt) {
         this(jobId, status, url, format, bytesSaved, error, createdAt, updatedAt, null, null);
     }
 
+    /** @deprecated Unused; removed in the next major. Use the full constructor or Jackson. */
+    @Deprecated
     public JobStatusResult(String jobId, String status, String url, String format, Long bytesSaved,
             Map<String, Object> error, String createdAt, String updatedAt, String modeApplied, Integer qualityApplied) {
         this(jobId, status, url, format, bytesSaved, error, createdAt, updatedAt, modeApplied, qualityApplied, null);

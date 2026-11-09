@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `upload_failed` message keeps at most 300 characters of the storage body. An S3 error document runs to kilobytes and repeats the pre-signed query, and the whole of it landed in exception messages and logs.
 - `waitTimeout` starts after the upload PUT, so it bounds the polling only, as SDK_SPEC section 3d.3 says. A slow upload used to eat into the 120 s and could end in `TimeoutException` while the job had barely started.
 
+### Removed
+- The `jackson-datatype-jsr310` dependency (no `java.time` field is deserialised), the `@EnableSmallPict` annotation (the auto-configuration is registered through `META-INF/spring/...AutoConfiguration.imports`; importing it directly bypassed auto-configuration ordering) and the `content_type` field of the request body (a duplicate of `mime_type`; `OptimizeOptions.contentType()` stays as an input alias). `OptimizeResult.getFormat()` is `null` when the job status omits it instead of `"auto"`. Two unused `JobStatusResult` constructors are deprecated for removal at the next major.
+
 ### Changed
 - `maxRetries` counts attempts, as `api-contract.md` section 5.2 ("maximum 3 attempts") says: `maxRetries(3)`, the default, makes three requests instead of four. Callers who relied on four attempts should set `maxRetries(4)`.
 
