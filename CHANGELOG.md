@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- The `upload_failed` message keeps at most 300 characters of the storage body. An S3 error document runs to kilobytes and repeats the pre-signed query, and the whole of it landed in exception messages and logs.
 - `waitTimeout` starts after the upload PUT, so it bounds the polling only, as SDK_SPEC section 3d.3 says. A slow upload used to eat into the 120 s and could end in `TimeoutException` while the job had barely started.
 
 ### Changed

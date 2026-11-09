@@ -204,7 +204,10 @@ public class SmallPictClient {
                     }
                     int status = response.statusCode();
                     if (status < 200 || status >= 300) {
-                        throw new SmallPictException("Upload to storage failed with HTTP " + status + ": " + response.body(),
+                        // An S3 error document runs to kilobytes and repeats the pre-signed query; keep the head.
+                        String body = response.body() == null ? "" : response.body();
+                        String head = body.length() > 300 ? body.substring(0, 300) + "..." : body;
+                        throw new SmallPictException("Upload to storage failed with HTTP " + status + ": " + head,
                                 "upload_failed", status, null, null, null);
                     }
                     return null;

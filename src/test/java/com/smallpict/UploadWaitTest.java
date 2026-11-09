@@ -185,4 +185,15 @@ class UploadWaitTest {
 
         assertEquals("https://cdn/a.webp", r.getUrl());
     }
+
+    @Test
+    void uploadFailedMessageIsTruncated() {
+        enqueueJson(200, queued());
+        server.enqueue(new MockResponse().setResponseCode(403).setBody("x".repeat(5000)));
+
+        SmallPictException e = assertThrows(SmallPictException.class, this::optimizePng);
+
+        assertEquals("upload_failed", e.getErrorCode());
+        assertTrue(e.getMessage().length() < 400, "message length " + e.getMessage().length());
+    }
 }
