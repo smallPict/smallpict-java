@@ -166,4 +166,23 @@ class UploadWaitTest {
         QuotaExceededException e = assertThrows(QuotaExceededException.class, this::optimizePng);
         assertEquals("QUOTA_EXCEEDED", e.getErrorCode());
     }
+
+    @Test
+    void waitTimeoutStartsAfterTheUpload() {
+        client = SmallPictClient.builder()
+                .apiKey("sp_sdk_test")
+                .secretKey("sec_test")
+                .baseUrl(server.url("/").toString())
+                .pollInterval(Duration.ofMillis(5))
+                .waitTimeout(Duration.ofMillis(150))
+                .build();
+        enqueueJson(200, queued());
+        server.enqueue(new MockResponse().setResponseCode(200).setHeadersDelay(300, java.util.concurrent.TimeUnit.MILLISECONDS));
+        enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"processing\"}");
+        enqueueJson(200, "{\"job_id\":\"job_1\",\"status\":\"completed\",\"url\":\"https://cdn/a.webp\",\"format\":\"webp\",\"bytes_saved\":1}");
+
+        OptimizeResult r = optimizePng();
+
+        assertEquals("https://cdn/a.webp", r.getUrl());
+    }
 }

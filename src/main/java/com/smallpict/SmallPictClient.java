@@ -160,10 +160,9 @@ public class SmallPictClient {
                 .handle((queued, throwable) -> {
                     if (throwable == null) {
                         String jobId = queued.path("job_id").asText();
-                        long deadline = System.nanoTime() + config.getWaitTimeout().toNanos();
                         // The worker waits 30 s from the request for the object: upload now, poll after.
                         return uploadAsync(queued.path("upload_url").asText(null), data, mimeType)
-                                .thenCompose(v -> waitForJobAsync(jobId, data.length, deadline));
+                                .thenCompose(v -> waitForJobAsync(jobId, data.length, System.nanoTime() + config.getWaitTimeout().toNanos()));
                     }
                     Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
                     if (cause instanceof QuotaExceededException && config.getFallbackMode() == FallbackMode.PASSTHROUGH) {
