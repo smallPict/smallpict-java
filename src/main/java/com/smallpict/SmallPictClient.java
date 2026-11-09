@@ -399,7 +399,7 @@ public class SmallPictClient {
                             && "purge_rate_limited".equals(jsonNode.path("error").path("code").asText());
 
                     if ((statusCode == 429 || (statusCode >= 500 && statusCode <= 504)) && !purgeRateLimited
-                            && attempt <= config.getMaxRetries()) {
+                            && attempt < config.getMaxRetries()) {
                         final long delayMs = (retryAfter != null && retryAfter > 0)
                                 ? retryAfter * 1000L
                                 : 250L * (1L << (attempt - 1));

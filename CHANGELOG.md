@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `waitTimeout` starts after the upload PUT, so it bounds the polling only, as SDK_SPEC section 3d.3 says. A slow upload used to eat into the 120 s and could end in `TimeoutException` while the job had barely started.
 
+### Changed
+- `maxRetries` counts attempts, as `api-contract.md` section 5.2 ("maximum 3 attempts") says: `maxRetries(3)`, the default, makes three requests instead of four. Callers who relied on four attempts should set `maxRetries(4)`.
+
 ### Added
 - Spring Boot properties `smallpict.poll-interval` (default `1s`) and `smallpict.wait-timeout` (default `120s`). The auto-configured client stopped at `fallback-mode`, so a Spring service could not change the 0.1.0 poll and wait options without replacing the bean.
 

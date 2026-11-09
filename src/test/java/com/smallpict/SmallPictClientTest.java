@@ -175,7 +175,7 @@ class SmallPictClientTest {
                 .apiKey("sp_sdk_test")
                 .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
-                .maxRetries(1)
+                .maxRetries(2)
                 .build();
 
         client.purgeCdn(List.of("https://cdn.smallpict.app/opt/hero.avif"), PurgeType.URL);
@@ -197,7 +197,7 @@ class SmallPictClientTest {
                 .apiKey("sp_sdk_test")
                 .secretKey("sec_test")
                 .baseUrl(server.url("/").toString())
-                .maxRetries(1)
+                .maxRetries(2)
                 .maxRetryDelay(java.time.Duration.ofMillis(5))
                 .build();
 
@@ -254,7 +254,19 @@ class SmallPictClientTest {
     void serverErrorIsRetriedOnce() {
         server.enqueue(new MockResponse().setResponseCode(503).setBody("{}"));
         server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(QUOTA));
-        assertEquals("free", signedClient(1).getQuota().getPlan());
+        assertEquals("free", signedClient(2).getQuota().getPlan());
         assertEquals(2, server.getRequestCount());
+    }
+
+    @Test
+    void maxRetriesCountsAttempts() {
+        for (int i = 0; i < 5; i++) {
+            server.enqueue(new MockResponse().setResponseCode(503).setBody("{}"));
+        }
+        SmallPictClient client = SmallPictClient.builder().apiKey("sp_sdk_test").secretKey("sec_test")
+                .baseUrl(server.url("/").toString()).maxRetries(3).maxRetryDelay(java.time.Duration.ofMillis(1)).build();
+
+        assertThrows(com.smallpict.errors.ServerException.class, client::getQuota);
+        assertEquals(3, server.getRequestCount(), "maxRetries(3) must mean three attempts, as api-contract.md 5.2 says");
     }
 }
