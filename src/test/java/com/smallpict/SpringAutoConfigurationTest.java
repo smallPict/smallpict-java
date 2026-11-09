@@ -17,7 +17,7 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** The auto-configuration must pass every property to the client, including the 0.1.0 poll and wait options. */
+/** The auto-configuration must pass every property to the client, including the poll and wait options. */
 class SpringAutoConfigurationTest {
     private MockWebServer server;
 

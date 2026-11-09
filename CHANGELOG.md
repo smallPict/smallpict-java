@@ -5,7 +5,9 @@ All notable changes to the `app.smallpict:smallpict-java` artifact will be docum
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.8] - Unreleased
+
+Next release after v0.0.7. It includes the changes first written up as 0.1.0, which was never tagged or published.
 
 ### Fixed
 - `SmallPictException.sanitize` masks server-issued `sps_...` secrets; the pattern knew only the `sec_`/`secret_` test fixtures, so a real secret pasted into a message was printed in full.
@@ -19,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `maxRetries` counts attempts, as `api-contract.md` section 5.2 ("maximum 3 attempts") says: `maxRetries(3)`, the default, makes three requests instead of four. Callers who relied on four attempts should set `maxRetries(4)`.
 
 ### Added
-- Spring Boot properties `smallpict.poll-interval` (default `1s`) and `smallpict.wait-timeout` (default `120s`). The auto-configured client stopped at `fallback-mode`, so a Spring service could not change the 0.1.0 poll and wait options without replacing the bean.
+- Spring Boot properties `smallpict.poll-interval` (default `1s`) and `smallpict.wait-timeout` (default `120s`). The auto-configured client stopped at `fallback-mode`, so a Spring service could not change the new poll and wait options without replacing the bean.
 
 ### Fixed
 - A 2xx response with an empty or non-JSON body (a proxy or WAF page) throws `SmallPictException` with code `INVALID_RESPONSE`. Before, `getQuota()` returned `null`, `validateKey()` returned `true` and `optimize()` failed with a `NullPointerException`.
@@ -31,8 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **`secretKey` is required.** `SmallPictConfig` throws `ValidationException` when neither `secretKey` nor `SMALLPICT_SECRET_KEY` is set. The Bearer-only mode (API key without signature) is gone: the API refuses it with 401 or 403, so a client built that way never worked. The README no longer calls the secret optional.
 - Release workflow runs the test suite before `mvn deploy` (no more `-DskipTests`); a tag on a commit that fails it no longer publishes. Actions are pinned to commit SHAs. The retired OSSRH `distributionManagement` block is gone (publishing goes through the Central Portal plugin), and the compiler uses `release` 17 so the JDK 21 CI job also checks the Java 17 API.
-
-## [0.1.0] - 2026-11-05
 
 ### Fixed
 - **`optimize()` now returns an optimized image.** `POST /v1/optimize` only queues the job and returns a pre-signed `upload_url`; the SDK stopped there, so the worker failed every job with "client upload never arrived" and callers got an empty `url` with 0 % saved. `optimize()` / `optimizeAsync()` now PUT the bytes to `upload_url` (plain PUT with `Content-Type` and `Content-Length` as sent, no API headers, no retry), poll `GET /v1/optimize/status` every `pollInterval` (default 1 s) and return once the job is `completed`, with `url`, `format`, `bytesSaved`, `modeApplied`, `qualityApplied` and `folder` from the job status (`SDK_SPEC.md` section 3d).
